@@ -1,3 +1,4 @@
+from numpy import unique
 import flowkit as fk
 import phenograph
 import fcsparser
@@ -76,27 +77,34 @@ def csvconcatenate(csvfolder):
     extension = 'csv'
     os.chdir(csvfolder)
     allfilenames = [i for i in glob.glob('*.{}'.format(extension))]
-    names = [os.path.basename(x) for x in glob.glob(csvfolder + '\*.csv')]
+    names = [os.path.basename(x) for x in glob.glob(csvfolder + '*.csv')]
     # combine all files in the list
     combined_csv = pd.concat([pd.read_csv(f, header=0) for f in allfilenames])
     # export to csv
     #combined_csv.to_csv("combined_csv.csv", index=False, header=True)
 
+    # get folder+files name
     all_files = glob.glob(os.path.join(csvfolder, "*.csv"))
+    # get files name
     names = [os.path.basename(x) for x in all_files]
+    # open a empty dataframe
     df = pd.DataFrame()
-
+    # append csv files and add a new columns with file name of provenance
     for file_, name in zip(all_files, names):
         file_df = pd.read_csv(file_, header=0)
         file_df['file_name'] = name.split('.')[0]
         df = df.append(file_df)
-
-    df['index'] = df.index + 1
-    df = df.set_index('index')
-    df['index'] = df['file_name'] + '_' + df.index.astype(str)
-    #df = df.set_index('index')
-    df = df.drop(['file_name'], axis=1)
-
+    # create a new column called events with the cell number
+    df['event'] = df.index + 1
+    # reset the input
+    df.reset_index(inplace=True)
+    # index start from 1
+    df.index += 1
+    # create a column called filename_cell with file name and event
+    df['filename_cell'] = df['file_name'] + '_' + df['event'].astype(str)
+    # remove intermediate
+    df = df.drop(['file_name','index'], axis=1)
+    # print(df.head())
     return df
 
 
@@ -121,7 +129,7 @@ def csv2fcsconverter(csvfile, outputfolder):
 
 
 def runphenograph(inputmatrixpheno):
-    communities, graph, Q = phenograph.cluster(inputmatrixpheno[inputmatrixpheno.columns.difference(['index'])], k=75,
+    communities, graph, Q = phenograph.cluster(inputmatrixpheno[inputmatrixpheno.columns.difference(['index','filename_cell'])], k=75,
                                                directed=False,
                                                n_jobs=32)
     print(pd.DataFrame(communities))
@@ -130,11 +138,12 @@ def runphenograph(inputmatrixpheno):
     dfPheno = dfPheno.rename(columns={'0': 'cluster'})
     dfPheno.to_csv("/mnt/hpcserver1_datadisk2_spuccio/SP008_Phenograph_BMT/phenograph/dfPheno.csv",sep="\t",header=True)
     inputmatrixpheno.to_csv("/mnt/hpcserver1_datadisk2_spuccio/SP008_Phenograph_BMT/phenograph/inputmatrixpheno.csv",sep="\t",header=True)
-    # df_merged = inputmatrixpheno.merge(dfPheno, how='outer', left_index=True, right_index=True)
-    # pd.DataFrame(communities).to_csv(
-    #     "/mnt/hpcserver1_datadisk2_spuccio/SP008_Phenograph_BMT/phenograph/communities.csv")
-    # df_merged.to_csv("/mnt/hpcserver1_datadisk2_spuccio/SP008_Phenograph_BMT/phenograph/afterpheno.csv",
-    #                  sep="\t",header=True,index=True)
+    print(dfPheno.head())
+    print(inputmatrixpheno.head())
+    print('Found {} clusters'.format(len(unique(communities))), flush=True)
+    df_merged = pd.merge(inputmatrixpheno,dfPheno,left_on="event",right_on="index")
+    pd.DataFrame(communities).to_csv("/mnt/hpcserver1_datadisk2_spuccio/SP008_Phenograph_BMT/phenograph/communities.csv")
+    df_merged.to_csv("/mnt/hpcserver1_datadisk2_spuccio/SP008_Phenograph_BMT/phenograph/afterpheno.csv",sep="\t",header=True,index=True)
 
 
 #csv2fcsconverter(testcsv,FCSraw_folder)
@@ -157,7 +166,7 @@ if __name__ == '__main__':
             print("remove step false")
         else:
             pg_input = csvmarkerremove(csvconcatenate(raw_folder), marker)
-            print(pg_input)
+            #print(pg_input.head())
             runphenograph(pg_input)
     elif options.f.upper() == "FCS":
         print("fcs")
