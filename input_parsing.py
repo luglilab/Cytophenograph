@@ -3,6 +3,7 @@ import os
 import pandas as pd
 import optparse
 import sys
+import flowkit as fk
 #
 parser = optparse.OptionParser(usage='', version='1.0')
 parser.add_option('-i', action="store", dest="input_folder", help='')
@@ -94,6 +95,20 @@ def csvmarkerremove(dataframeconcatenate,markerarray,outpfold, outputname):
     dataframeconcatenate.to_csv("".join([outpfold, outputname, "_nomarker.csv"]), index=False, header=True)
     return "".join([outpfold, outputname, "_nomarker.csv"])
 
+def fcs2csv(inputfcsfolder,outputcsvfolder):
+    # set the extension value
+    extension = 'fcs'
+    # save path and input filename
+    allfilenames = [i for i in glob.glob("".join([FCS_folder, '*.{}'.format(extension)]))]
+    # save prefix name
+    prefixname = []
+    #
+    for i in range(len(allfilenames)):
+        sample = fk.Sample(allfilenames[i], subsample_count=None)
+        sample.export_csv(source='raw', subsample=False,
+                          filename="".join([allfilenames[i].split("/")[-1].split(".")[0],".csv"]),
+                          directory=output_CSV_folder)
+
 if __name__ == '__main__':
     print("Script start")
     raw_folder = pathchecker(options.input_folder)
@@ -110,16 +125,31 @@ if __name__ == '__main__':
         marker = read_markers(options.channel_excluded)
     print(" ".join(["These markers will be removed:\n",'-'.join(marker)]))
     if options.f.upper() == "CSV":
-        print("For this analysis CSV files are selected.")
+        print("CSV files format are selected.")
         if removestep is False:
             print("remove step false")
         else:
             print("Concatenation of input CSV files")
-            concfile = csvconcatenate(raw_folder, output_folder,"test") #TODO
+            concfile = csvconcatenate(raw_folder, output_folder,options.analysis_name)
             print("Remove markers")
-            pg_input = csvmarkerremove(concfile, marker,output_folder,"test")
+            pg_input = csvmarkerremove(concfile, marker,output_folder,options.analysis_name)
     elif options.f.upper() == "FCS":
-        print("fcs")
+        print("FCS files format are selected.")
+        dirCSV = "".join([output_folder, "converted_fcs"])
+        # create directory for the converted FCS to CSV
+        createdir(dirCSV)
+        # convert FCS to CSV
+        fcs2csv(raw_folder,dirCSV)
+        #
+        if options.f.upper() == "CSV":
+            print("CSV files format are selected.")
+            if removestep is False:
+                print("remove step false")
+            else:
+                print("Concatenation of input CSV files")
+                concfile = csvconcatenate(raw_folder, output_folder, options.analysis_name)
+                print("Remove markers")
+                pg_input = csvmarkerremove(concfile, marker, output_folder, options.analysis_name)
     else:
         print("Please specify input format: csv or fcs")
         sys.exit(1)
