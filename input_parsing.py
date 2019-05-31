@@ -77,7 +77,7 @@ def csvconcatenate(csvfolder,outpfold,outputname):
     # create a column called filename_cell with file name and event
     df['filename_cell'] = df['file_name'] + '_' + df['event'].astype(str)
     # remove intermediate
-    df = df.drop(['file_name', 'index'], axis=1)
+    df = df.drop(['file_name', 'index', 'event'], axis=1)
     # export to csv
     df.to_csv("".join([outpfold,outputname,".csv"]), index=False, header=True)
     return "".join([outpfold,outputname,".csv"])
@@ -90,24 +90,33 @@ def csvmarkerremove(dataframeconcatenate,markerarray,outpfold, outputname):
     :return:
     """
     dataframeconcatenate = pd.read_csv(dataframeconcatenate,header=0)
+    # check markers
     for i in range(len(markerarray)):
-        dataframeconcatenate.drop(markerarray[i].strip('\n'), axis=1, inplace=True)
+        # check if marker element is in column header
+        if markerarray[i].strip('\n') in list(dataframeconcatenate.columns.values):
+            # delete marker
+            dataframeconcatenate.drop(markerarray[i].strip('\n'), axis=1, inplace=True)
+        else:
+            print("Error marker {} is not present in input file. Please check your inputs files.".format(markerarray[i].strip('\n')))
+            sys.exit(1)
+    # write df concatenated and filtered of markers columns
     dataframeconcatenate.to_csv("".join([outpfold, outputname, "_nomarker.csv"]), index=False, header=True)
+    # return
     return "".join([outpfold, outputname, "_nomarker.csv"])
 
 def fcs2csv(inputfcsfolder,outputcsvfolder):
     # set the extension value
     extension = 'fcs'
     # save path and input filename
-    allfilenames = [i for i in glob.glob("".join([FCS_folder, '*.{}'.format(extension)]))]
+    allfilenames = [i for i in glob.glob("".join([inputfcsfolder, '*.{}'.format(extension)]))]
     # save prefix name
     prefixname = []
-    #
+    # convert with flowkit
     for i in range(len(allfilenames)):
         sample = fk.Sample(allfilenames[i], subsample_count=None)
         sample.export_csv(source='raw', subsample=False,
                           filename="".join([allfilenames[i].split("/")[-1].split(".")[0],".csv"]),
-                          directory=output_CSV_folder)
+                          directory=outputcsvfolder)
 
 if __name__ == '__main__':
     print("Script start")
@@ -139,17 +148,16 @@ if __name__ == '__main__':
         # create directory for the converted FCS to CSV
         createdir(dirCSV)
         # convert FCS to CSV
+        print("Conversion FCS to CSV.")
         fcs2csv(raw_folder,dirCSV)
         #
-        if options.f.upper() == "CSV":
-            print("CSV files format are selected.")
-            if removestep is False:
-                print("remove step false")
-            else:
-                print("Concatenation of input CSV files")
-                concfile = csvconcatenate(raw_folder, output_folder, options.analysis_name)
-                print("Remove markers")
-                pg_input = csvmarkerremove(concfile, marker, output_folder, options.analysis_name)
+        if removestep is False:
+            print("remove step false")
+        else:
+            print("Concatenation of input FCS files")
+            concfile = csvconcatenate(dirCSV, output_folder, options.analysis_name)
+            print("Remove markers")
+            pg_input = csvmarkerremove(concfile, marker, output_folder, options.analysis_name)
     else:
         print("Please specify input format: csv or fcs")
         sys.exit(1)
