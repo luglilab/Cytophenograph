@@ -12,28 +12,26 @@ import sys
 #
 
 
-def runphenograph(inputmatrix, outputfolder):
-    inputmatrixpheno = pd.read_csv(inputmatrix,header=0,index_col="filename_cell")
-    print(inputmatrixpheno.head())
-    communities, graph, Q = phenograph.cluster(inputmatrixpheno[inputmatrixpheno.columns.difference(['index','filename_cell'])], k=75,
+
+
+
+def runphenograph(inputmatrix, outputfolder,prefix):
+    inputmatrixpheno = pd.read_csv(inputmatrix,header=0)
+    communities, graph, Q = phenograph.cluster(inputmatrixpheno[inputmatrixpheno.columns.difference(['filename_cell'])], k=75,
                                                directed=False,
-                                               n_jobs=32)
+                                               n_jobs=20)
     dfPheno = pd.DataFrame(communities)
-    dfPheno['index'] = dfPheno.index + 1
-    dfPheno = dfPheno.rename(columns={'0': 'cluster'})
-    #dfPheno.to_csv("".join([outputfolder,"dfPheno.csv"]),sep="\t",header=True)
-    #inputmatrixpheno.to_csv("/mnt/hpcserver1_datadisk2_spuccio/SP008_Phenograph_BMT/phenograph/inputmatrixpheno.csv",sep="\t",header=True)
-    #print(dfPheno.head())
-    #print(inputmatrixpheno.head())
+    dfPheno = dfPheno.rename(columns={0: 'cluster'})
+    dfMerge = inputmatrixpheno.merge(dfPheno, how='outer', left_index=True, right_index=True)
+    dfMerge.to_csv("".join([outputfolder,prefix,"_clustered_data.csv"]),sep="\t",header=True)
     print('Found {} clusters'.format(len(unique(communities))), flush=True)
-    new = inputmatrixpheno.index.str.split("_", n=0, expand=True)
-    inputmatrixpheno['event'] = new.iloc[:, -1]
-    df_merged = pd.merge(inputmatrixpheno,dfPheno,left_on="event",right_on="index")
-    pd.DataFrame(communities).to_csv("/mnt/hpcserver1_datadisk2_spuccio/SP008_Phenograph_BMT/phenograph/communities.csv")
-    df_merged.to_csv("/mnt/hpcserver1_datadisk2_spuccio/SP008_Phenograph_BMT/phenograph/afterpheno.csv",
-                     sep="\t",header=True,index=True)
+    cluster_frame = dfMerge.groupby("cluster", as_index=False).median()
+    cluster_frame = cluster_frame[cluster_frame["cluster"] != -1]
+    cluster_frame["cluster"] = dfMerge.groupby("cluster")["cluster"].count()
+    cluster_frame.to_csv("".join([outputfolder,prefix,"_cluster_info.csv"]),sep="\t",header=True)
+    print('Clustering successful', flush=True)
 
 
 if __name__ == '__main__':
     runphenograph("/mnt/hpcserver1_datadisk2_spuccio/SP008_Phenograph_BMT/CD4_Phenograph_data/CD4_filtered_42_122/fcs/test_nomarkerscaled.txt",
-                  outputfolder="/mnt/hpcserver1_datadisk2_spuccio/SP008_Phenograph_BMT/phenograph/")
+                  outputfolder="/mnt/hpcserver1_datadisk2_spuccio/SP008_Phenograph_BMT/phenograph/",prefix="test1")
