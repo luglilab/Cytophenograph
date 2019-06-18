@@ -3,6 +3,9 @@ import matplotlib.pyplot as plt
 plt.switch_backend('agg') # prevent show plot bug
 from seaborn import heatmap, clustermap
 import pandas as pd
+import seaborn as sns
+import numpy as np
+sns.set()
 
 
 
@@ -21,3 +24,18 @@ def plot_heatmap(frame, save_to_path, y_axis):
 	save_pdf(save_to_path, hm)
 	print('Export {}'.format(save_to_path), flush=True)
 	plt.close('all')
+
+
+df1 = pd.read_csv("/mnt/hpcserver1_datadisk2_spuccio/SP008_Phenograph_BMT/phenograph/outfoldertest/testGiorgiaFCS_cluster_info.csv",sep="\t",header=0)
+df1 = df1.drop(columns=['Unnamed: 0','cluster'])
+
+
+test = sns.heatmap(df1.T,
+                 vmin=0,
+                 vmax=1.0,
+                 linewidths=0.004,
+                 linecolor="black",
+                 cmap='Spectral_r')
+test = test.get_figure()
+test.savefig("heatmap.png")
+

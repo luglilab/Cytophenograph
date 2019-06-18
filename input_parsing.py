@@ -4,6 +4,7 @@ import pandas as pd
 import optparse
 import sys
 import flowkit as fk
+import fcs_reader as fcsrd
 #
 parser = optparse.OptionParser(usage='', version='1.0')
 parser.add_option('-i', action="store", dest="input_folder", help='')
@@ -132,7 +133,7 @@ if __name__ == '__main__':
     else:
         removestep = True
         marker = read_markers(options.channel_excluded)
-    print(" ".join(["These markers will be removed:\n",'-'.join(marker)]))
+        print(" ".join(["These markers will be removed:\n",'-'.join(marker)]))
     if options.f.upper() == "CSV":
         print("CSV files format are selected.")
         if removestep is False:
@@ -153,6 +154,7 @@ if __name__ == '__main__':
         #
         if removestep is False:
             print("remove step false")
+            concfile = csvconcatenate(dirCSV, output_folder, options.analysis_name)
         else:
             print("Concatenation of input FCS files")
             concfile = csvconcatenate(dirCSV, output_folder, options.analysis_name)
