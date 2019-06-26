@@ -10,7 +10,9 @@ import matplotlib as mpl
 mpl.use('Agg')
 import matplotlib.pyplot as plt
 import matplotlib.patheffects as PathEffects
+import matplotlib.cm as cm
 import numpy as np
+from sklearn.metrics import silhouette_samples, silhouette_score
 np.random.seed(123456)
 
 sns.set_style('darkgrid')
@@ -213,7 +215,7 @@ def combine(data, tsne, pheno, outfold, name):
     removec = []
     removec += [col for col in dfout.columns if 'event' in col]
     removec += [col for col in dfout.columns if 'file_name' in col]
-    dfout = dfout.drop(columns=[removec[0], removec[1],removec[2]])
+    dfout = dfout.drop(columns=[removec[0], removec[1]])
     dfout.to_csv("/".join([outfold, "".join([name, "_concatenated.txt"])]),
                  sep=",",
                  header=True, index=False)
@@ -274,22 +276,78 @@ def groupbysample(alldf, outfold, name):
             header=True, index=False)
 
 
-# def tsneplot(alldf, outfold, name):
-#     """
-#
-#     :param alldf:
-#     :param outfold:
-#     :param name:
-#     :return:
-#     """
-#     tsnecol = []
-#     tsnecol += [col for col in alldf.columns if 'Tsne_1' in col]
-#     tsnecol += [col for col in alldf.columns if 'Tsne_2' in col]
-#     phenocol = []
-#     phenocol += [col for col in alldf.columns if 'Phenograph' in col]
-#     testplot = sns.relplot(x=tsnecol[0], y=tsnecol[1], hue=phenocol[0], palette='Spectral',
-#                            data=alldf, legend="full", s=5)
-#     testplot.savefig("/".join([outfold, name]))
+def validationplot(marker,alldf,outfold,name):
+    data = alldf.copy()
+    tsne = alldf.copy()
+    head = data[data.columns[0]].unique().tolist()
+    removec = []
+    removec += [col for col in data.columns if 'event' in col]
+    removec += [col for col in data.columns if 'file_name' in col]
+    removec += [col for col in data.columns if 'Phenograph' in col]
+    removec += [col for col in data.columns if 'Tsne_1' in col]
+    removec += [col for col in data.columns if 'Tsne_2' in col]
+    data.drop(columns=[removec[0],removec[1]], axis=1, inplace=True)
+    for i in range(len(marker)):
+        data.drop("\""+marker[i]+"\"", axis=1, inplace=True)
+    y = data[removec[2]].values.flatten()
+    X = data.drop(columns=[removec[2],removec[3],removec[4]]).values
+    n_clusters = [int(data[removec[2]].max() + 1)][0]
+    # fig, (ax1, ax2) = plt.subplots(1, 1)
+    # fig.set_size_inches(18, 7)
+    f = plt.figure(figsize=(18, 7))
+    plt.style.use('seaborn-white')
+    plt.xlim(-0.1, 1)
+    # The (n_clusters+1)*10 is for inserting blank space between silhouette
+    # plots of individual clusters, to demarcate them clearly.
+    plt.ylim(0, len(X) + (n_clusters + 1) * 10)
+
+
+    # Initialize the clusterer with n_clusters value and a random generator
+    # seed of 10 for reproducibility.
+    # clusterer = KMeans(n_clusters=n_clusters, random_state=10)
+    cluster_labels = y
+    silhouette_avg = silhouette_score(X, cluster_labels)
+    print("For n_clusters =", n_clusters,
+          "The average silhouette_score is :", silhouette_avg)
+    # Compute the silhouette scores for each sample
+    sample_silhouette_values = silhouette_samples(X, cluster_labels)
+
+    y_lower = 10
+    for i in range(n_clusters):
+        # Aggregate the silhouette scores for samples belonging to
+        # cluster i, and sort them
+        ith_cluster_silhouette_values = \
+            sample_silhouette_values[cluster_labels == i]
+
+        ith_cluster_silhouette_values.sort()
+
+        size_cluster_i = ith_cluster_silhouette_values.shape[0]
+        y_upper = y_lower + size_cluster_i
+
+        color = cm.nipy_spectral(float(i) / n_clusters)
+        plt.fill_betweenx(np.arange(y_lower, y_upper),
+                          0, ith_cluster_silhouette_values,
+                          facecolor=color, edgecolor=color, alpha=0.7)
+
+        # Label the silhouette plots with their cluster numbers at the middle
+        plt.text(-0.05, y_lower + 0.5 * size_cluster_i, str(i))
+
+        # Compute the new y_lower for next plot
+        y_lower = y_upper + 10  # 10 for the 0 samples
+
+    #plt.title("The silhouette plot for the various clusters.")
+    plt.xlabel("The silhouette coefficient values ")
+    plt.ylabel("Cluster label")
+
+    # The vertical line for average silhouette score of all the values
+    plt.axvline(x=silhouette_avg, color="red", linestyle="--")
+
+    plt.yticks([])  # Clear the yaxis labels / ticks
+    plt.xticks([-0.1, 0, 0.2, 0.4, 0.6, 0.8, 1])
+
+    plt.title(("Silhouette analysis for Phenograph clustering on {0} data with n_clusters = {1}.\n The average silhouette_score is {2}".format(name,n_clusters,silhouette_avg)),
+                 fontsize=14, fontweight='bold')
+    plt.savefig("/".join([outfold, "".join([name, "_validation"])]))
 
 
 def tsneplot(x, colors,outfold, name):

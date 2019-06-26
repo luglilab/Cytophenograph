@@ -1,11 +1,11 @@
 from PhenoFunctions import *
 
 markerslist = "/home/spuccio/datadisk2/SP008_Phenograph_BMT/Jasper/Marker.txt"
-outfolder = "/mnt/hpcserver1_datadisk2_spuccio/SP008_Phenograph_BMT/Jasper/CD8_Ag_Phenograph/30"
-name = "Exported_FJ10_CD8_Ag_k30"
+outfolder = "/mnt/hpcserver1_datadisk2_spuccio/SP008_Phenograph_BMT/Jasper/test/30"
+name = "test"
 k = 30
 Thread = 30
-csvfolder = "/mnt/hpcserver1_datadisk2_spuccio/SP008_Phenograph_BMT/Exported_FJ10_CD8_Ag"
+csvfolder = "/mnt/hpcserver1_datadisk2_spuccio/SP008_Phenograph_BMT/test"
 infodf = filenameeventinfor(csvfolder)
 
 pathmarkerfile, basenamemarkerfilepath = loadmarkers(markerslist)
@@ -35,7 +35,7 @@ groupbycluster(alldf=dfAll, outfold=outfolder, name=name)
 
 groupbysample(alldf=dfAll, outfold=outfolder, name=name)
 
-
+validationplot(marker=markertoexclude, alldf=dfAll, outfold=outfolder, name=name)
 
 tsneplot(x=dfTsne.values, colors=dfPheno.values.flatten(),
          outfold=outfolder, name=name)
