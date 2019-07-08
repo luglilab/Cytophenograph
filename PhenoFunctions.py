@@ -2,7 +2,7 @@ import glob
 import os
 import sys
 import pandas as pd
-import phenograph as pg
+#import phenograph as pg
 from openTSNE import TSNE
 import flowkit as fk
 import seaborn as sns
@@ -13,6 +13,11 @@ import matplotlib.patheffects as PathEffects
 import matplotlib.cm as cm
 import numpy as np
 from sklearn.metrics import silhouette_samples, silhouette_score
+import random
+import subprocess
+from numpy import unique
+import shutil
+random.seed(123456)
 np.random.seed(123456)
 
 sns.set_style('darkgrid')
@@ -123,12 +128,12 @@ def filenameeventinfor(csvfolder):
     for file_, name in zip(all_files, names):
         file_df = pd.read_csv(file_, header=0)
         file_df['file_name'] = name.split('.')[0]
-        df = df.append(file_df)
+        df = df.append(file_df,sort=False)
     df['event'] = df.index + 1
     df = df.reset_index(drop=True)
     # subsetting
     dfFileNameEvent = df[['file_name', 'event']]
-    dfConcatenate = df.drop(columns=['file_name', 'event'])
+    dfConcatenate = df.drop(columns=['file_name', 'event']) #TODO check col name
     dfConcwitName = pd.merge(dfFileNameEvent, dfConcatenate,
                              left_index=True,
                              right_index=True, how='left')
@@ -150,19 +155,37 @@ def runphenograph(marker, concdf, kcoev, thread, outfold, name):
     data = concdf.copy()
     for i in range(len(marker)):
         data.drop(marker[i], axis=1, inplace=True)
-    communities, graph, Q = pg.cluster(data.values, k=int(kcoev),
-                                       directed=False,
-                                       min_cluster_size=1,
-                                       n_jobs=thread)
-    dfPheno = pd.DataFrame(communities)
-    dfMerge = pd.merge(data, dfPheno, left_index=True, right_index=True, how='left')
-    dfPheno.to_csv("/".join([outfold, "".join([name, "_clusters.txt"])]),
-                   sep="\t",
-                   header=True, index=False)
-    dfMerge = dfMerge.rename(columns={0: 'Phenograph'})
-    dfMerge.to_csv("/".join([outfold, "".join([name, "_pheno.txt"])]),
-                   sep="\t",
-                   header=True, index=False)
+    data.to_csv("/".join([outfold, "".join([name, "_clusters.txt"])]), sep="\t",
+                header=True, index=False)
+    Rscript = shutil.which('Rscript')
+    PhenoR = "/".join([os.path.dirname(os.path.abspath(__file__)), "Phenograph.R"])
+    subprocess.call(['{0} {1} -i {2} -k {3} -o {4} -n {5}'.format(Rscript, PhenoR,
+                                                                  "/".join([outfold, "".join([name, "_clusters.txt"])]),
+                                                                  kcoev, outfold, name)], shell=True)
+    # communities, graph, Q = pg.cluster(data.values, k=int(kcoev),
+    #                                    directed=True,
+    #                                    min_cluster_size=1,
+    #                                    n_jobs=thread)
+    # dfPheno = pd.DataFrame(communities)
+    # dfMerge = pd.merge(data, dfPheno, left_index=True, right_index=True, how='left')
+    # dfPheno.to_csv("/".join([outfold, "".join([name, "_clusters.txt"])]),
+    #                sep="\t",
+    #                header=True, index=False)
+    # dfMerge = dfMerge.rename(columns={0: 'Phenograph'})
+    # dfMerge.to_csv("/".join([outfold, "".join([name, "_pheno.txt"])]),
+    #                sep="\t",
+    #                header=True, index=False)
+    dfPheno = pd.read_csv("/".join([outfold,"".join([name,".tsv"])]),sep="\t",header=0)
+    # print('Found {} clusters'.format(len(unique(dfPheno["Phenograph"]))), flush=True)
+    # create a df groupby with cluster information
+    cluster_frame = dfPheno.groupby("Phenograph", as_index=False).median()
+    cluster_frame.index += 1
+    # skip -1 which means under min cluster size
+    cluster_frame = cluster_frame[cluster_frame["Phenograph"] != -1]  #
+    cluster_frame["Phenograph"] = dfPheno.groupby("Phenograph")["Phenograph"].count()
+    cluster_frame.to_csv("".join([outfold, name, "_cluster_info.csv"]), sep="\t", header=True)
+    print('', flush=True)
+    print('Clustering successful', flush=True)
     return dfPheno
 
 
@@ -187,6 +210,7 @@ def runtsne(marker,concdf,thread,outfold,name):
                 neighbors="exact", negative_gradient_method="bh")
     embedding = tsne.fit(x)
     dftsne = pd.DataFrame({'Tsne_1': embedding[:, 0], 'Tsne_2': embedding[:, 1]})
+    dftsne = dftsne.round(2)
     dfMerge = pd.merge(data, dftsne, left_index=True, right_index=True,
                        how='left')
     dfMerge.to_csv("/".join([outfold, "".join([name, "_tsne.txt"])]),
@@ -277,6 +301,14 @@ def groupbysample(alldf, outfold, name):
 
 
 def validationplot(marker,alldf,outfold,name):
+    """
+
+    :param marker:
+    :param alldf:
+    :param outfold:
+    :param name:
+    :return:
+    """
     data = alldf.copy()
     tsne = alldf.copy()
     head = data[data.columns[0]].unique().tolist()
@@ -287,16 +319,18 @@ def validationplot(marker,alldf,outfold,name):
     removec += [col for col in data.columns if 'Tsne_1' in col]
     removec += [col for col in data.columns if 'Tsne_2' in col]
     data.drop(columns=[removec[0],removec[1]], axis=1, inplace=True)
+    data = data.loc[data[removec[2]] >= 0]
     for i in range(len(marker)):
         data.drop("\""+marker[i]+"\"", axis=1, inplace=True)
     y = data[removec[2]].values.flatten()
     X = data.drop(columns=[removec[2],removec[3],removec[4]]).values
-    n_clusters = [int(data[removec[2]].max() + 1)][0]
+    # n_clusters = [int(data[removec[2]].max() + 1)][0] old command
+    n_clusters = [int(data[removec[2]].max())][0]
     # fig, (ax1, ax2) = plt.subplots(1, 1)
     # fig.set_size_inches(18, 7)
     f = plt.figure(figsize=(18, 7))
     plt.style.use('seaborn-white')
-    plt.xlim(-0.1, 1)
+    plt.xlim(-1, 1)
     # The (n_clusters+1)*10 is for inserting blank space between silhouette
     # plots of individual clusters, to demarcate them clearly.
     plt.ylim(0, len(X) + (n_clusters + 1) * 10)
@@ -313,7 +347,7 @@ def validationplot(marker,alldf,outfold,name):
     sample_silhouette_values = silhouette_samples(X, cluster_labels)
 
     y_lower = 10
-    for i in range(n_clusters):
+    for i in range(1,n_clusters+1):
         # Aggregate the silhouette scores for samples belonging to
         # cluster i, and sort them
         ith_cluster_silhouette_values = \
@@ -361,19 +395,21 @@ def tsneplot(x, colors,outfold, name):
     """
     # choose a color palette with seaborn.
     num_classes = len(np.unique(colors))
-    palette = np.array(sns.color_palette("hls", num_classes))
-
+    palette = np.array(sns.color_palette("hls", num_classes+1))
+    #print(colors.max())
+    #print((colors.min()))
+    #print(palette)
     # create a scatter plot.
     f = plt.figure(figsize=(8, 8))
     ax = plt.subplot(aspect='equal')
-    scatter = ax.scatter(x[:,0], x[:,1], lw=0, s=40,alpha=0.3, c=palette[colors.astype(np.int)])
+    scatter = ax.scatter(x[:,0], x[:,1], lw=0, s=40,alpha=0.3, c=palette[colors.values.astype(np.int)])
     plt.xlim(-25, 25)
     plt.ylim(-25, 25)
     ax.axis('off')
     ax.axis('tight')
     # add the labels for each digit corresponding to the label
     txts = []
-    for i in range(num_classes):
+    for i in range(1,num_classes+1):
 
         # Position of each label at median of data points.
 

@@ -28,6 +28,7 @@ if __name__ == '__main__':
     markertoexclude = checkmarkers(markerfile="/".join([pathmarkerfile, basenamemarkerfilepath]),
                                    data=infodf[2])
 
+
     dfPheno = runphenograph(marker=markertoexclude,
                             concdf=infodf[1],
                             kcoev=int(options.kmeancoef),
@@ -49,6 +50,5 @@ if __name__ == '__main__':
     groupbysample(alldf=dfAll, outfold=options.output_folder, name=options.analysis_name)
 
     validationplot(marker=markertoexclude, alldf=dfAll, outfold=options.output_folder, name=options.analysis_name)
-
-    tsneplot(x=dfTsne.values, colors=dfPheno.values.flatten(),
-             outfold=options.output_folder, name=options.analysis_name)
+    x = dfTsne[['Tsne_1','Tsne_2']]
+    tsneplot(x=dfTsne.values, colors=dfPheno["Phenograph"], outfold=options.output_folder, name=options.analysis_name)
