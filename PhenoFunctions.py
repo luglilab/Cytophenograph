@@ -2,7 +2,7 @@ import glob
 import os
 import sys
 import pandas as pd
-#import phenograph as pg
+import phenograph as pg
 from openTSNE import TSNE
 import flowkit as fk
 import seaborn as sns
@@ -17,8 +17,9 @@ import random
 import subprocess
 from numpy import unique
 import shutil
-random.seed(123456)
-np.random.seed(123456)
+import umap
+import warnings
+warnings.filterwarnings('ignore')
 
 sns.set_style('darkgrid')
 sns.set_palette('muted')
@@ -157,36 +158,36 @@ def runphenograph(marker, concdf, kcoev, thread, outfold, name):
         data.drop(marker[i], axis=1, inplace=True)
     data.to_csv("/".join([outfold, "".join([name, "_clusters.txt"])]), sep="\t",
                 header=True, index=False)
-    Rscript = shutil.which('Rscript')
-    PhenoR = "/".join([os.path.dirname(os.path.abspath(__file__)), "Phenograph.R"])
-    subprocess.call(['{0} {1} -i {2} -k {3} -o {4} -n {5}'.format(Rscript, PhenoR,
-                                                                  "/".join([outfold, "".join([name, "_clusters.txt"])]),
-                                                                  kcoev, outfold, name)], shell=True)
-    # communities, graph, Q = pg.cluster(data.values, k=int(kcoev),
-    #                                    directed=True,
-    #                                    min_cluster_size=1,
-    #                                    n_jobs=thread)
-    # dfPheno = pd.DataFrame(communities)
-    # dfMerge = pd.merge(data, dfPheno, left_index=True, right_index=True, how='left')
-    # dfPheno.to_csv("/".join([outfold, "".join([name, "_clusters.txt"])]),
-    #                sep="\t",
-    #                header=True, index=False)
-    # dfMerge = dfMerge.rename(columns={0: 'Phenograph'})
-    # dfMerge.to_csv("/".join([outfold, "".join([name, "_pheno.txt"])]),
-    #                sep="\t",
-    #                header=True, index=False)
-    dfPheno = pd.read_csv("/".join([outfold,"".join([name,".tsv"])]),sep="\t",header=0)
+    # Rscript = shutil.which('Rscript')
+    # PhenoR = "/".join([os.path.dirname(os.path.abspath(__file__)), "Phenograph.R"])
+    # subprocess.call(['{0} {1} -i {2} -k {3} -o {4} -n {5}'.format(Rscript, PhenoR,
+    #                                                               "/".join([outfold, "".join([name, "_clusters.txt"])]),
+    #                                                               kcoev, outfold, name)], shell=True)
+    communities, graph, Q = pg.cluster(data.values, k=int(kcoev),
+                                       directed=True,
+                                       min_cluster_size=1,
+                                       n_jobs=thread)
+    dfPheno = pd.DataFrame(communities)
+    dfMerge = pd.merge(data, dfPheno, left_index=True, right_index=True, how='left')
+    dfPheno.to_csv("/".join([outfold, "".join([name, "_clusters.txt"])]),
+                   sep="\t",
+                   header=True, index=False)
+    dfMerge = dfMerge.rename(columns={0: 'Phenograph'})
+    dfMerge.to_csv("/".join([outfold, "".join([name, "_pheno.txt"])]),
+                   sep="\t",
+                   header=True, index=False)
+    #dfPheno = pd.read_csv("/".join([outfold,"".join([name,".tsv"])]),sep="\t",header=0)
     # print('Found {} clusters'.format(len(unique(dfPheno["Phenograph"]))), flush=True)
     # create a df groupby with cluster information
-    cluster_frame = dfPheno.groupby("Phenograph", as_index=False).median()
+    cluster_frame = dfMerge.groupby("Phenograph", as_index=False).median()
     cluster_frame.index += 1
     # skip -1 which means under min cluster size
     cluster_frame = cluster_frame[cluster_frame["Phenograph"] != -1]  #
-    cluster_frame["Phenograph"] = dfPheno.groupby("Phenograph")["Phenograph"].count()
-    cluster_frame.to_csv("".join([outfold, name, "_cluster_info.csv"]), sep="\t", header=True)
+    cluster_frame["Phenograph"] = dfMerge.groupby("Phenograph")["Phenograph"].count()
+    cluster_frame.to_csv("/".join([outfold,"".join([name,"_cluster_info.csv"])]), sep="\t", header=True)
     print('', flush=True)
     print('Clustering successful', flush=True)
-    return dfPheno
+    return dfMerge
 
 
 def runtsne(marker,concdf,thread,outfold,name):
@@ -218,6 +219,31 @@ def runtsne(marker,concdf,thread,outfold,name):
                    header=True, index=False)
     return dftsne
 
+def runumap(marker,concdf,thread,outfold,name):
+    """
+
+    :param marker:
+    :param concdf:
+    :param thread:
+    :param outfold:
+    :param name:
+    :return:
+    """
+    print("Start umap")
+    data = concdf.copy()
+    for i in range(len(marker)):
+        data.drop(marker[i], axis=1, inplace=True)
+    x = data.values
+    reducer = umap.UMAP(random_state=42)
+    embedding = reducer.fit_transform(x)
+    dfumap = pd.DataFrame({'Umap_1': embedding[:, 0], 'Umap_2': embedding[:, 1]})
+    dfumap = dfumap.round(2)
+    dfMerge = pd.merge(data, dfumap, left_index=True, right_index=True,
+                       how='left')
+    dfMerge.to_csv("/".join([outfold, "".join([name, "_umap.txt"])]),
+                   sep="\t",
+                   header=True, index=False)
+    return dfumap
 
 def combine(data, tsne, pheno, outfold, name):
     """
@@ -231,10 +257,11 @@ def combine(data, tsne, pheno, outfold, name):
     """
     dftsnepheno = pd.merge(tsne, pheno, left_index=True, right_index=True,
                            how='left')
+    dftsnepheno = dftsnepheno[["Tsne_1","Tsne_2","Phenograph"]]
     dfAll = pd.merge(data, dftsnepheno, left_index=True, right_index=True,
                      how='left')
     dfAll = dfAll.rename(columns={0: 'Phenograph'})
-    dfAll.columns = ['\"' + str(col) + '\"' for col in dfAll.columns]
+    #dfAll.columns = ['\"' + str(col) + '\"' for col in dfAll.columns]
     dfout = dfAll.copy()
     removec = []
     removec += [col for col in dfout.columns if 'event' in col]
@@ -243,7 +270,7 @@ def combine(data, tsne, pheno, outfold, name):
     dfout.to_csv("/".join([outfold, "".join([name, "_concatenated.txt"])]),
                  sep=",",
                  header=True, index=False)
-    csv2fcs(inputdf=dfout, outfold=outfold, name=name)
+    #csv2fcs(inputdf=dfout, outfold=outfold, name=name)
     return dfAll
 
 
@@ -274,6 +301,7 @@ def groupbycluster(alldf, outfold, name):
     removec = []
     removec += [col for col in df.columns if 'event' in col]
     removec += [col for col in df.columns if 'file_name' in col]
+    # save files
     for i in head:
         df.loc[df[df.columns[-1]] == i].drop(columns=[removec[0], removec[1]]).to_csv(
             "/".join([outfold, "FCScluster", "".join([name, "_", str(i), ".csv"])]),
@@ -294,6 +322,30 @@ def groupbysample(alldf, outfold, name):
     removec = []
     removec += [col for col in df.columns if 'event' in col]
     removec += [col for col in df.columns if 'file_name' in col]
+    # get unique filenames
+    unique_filename = df.file_name.unique()
+    # get unique number of cluster
+    unique_Phenograph = df.Phenograph.unique()
+    # create empty dataframe
+    dfCounts = pd.DataFrame(index=range(min(unique_Phenograph), max(unique_Phenograph) + 1))
+    # generate Tot_percentage file
+    for i in range(len(unique_filename)):
+        dfCounts[unique_filename[i]] = df.loc[df['file_name'] == unique_filename[i]].Phenograph.value_counts(
+            normalize=True).reindex(df.Phenograph.unique(), fill_value=0)
+    # compute percentage
+    dfCounts = dfCounts * 100
+    # save
+    dfCounts.to_csv("/".join([outfold, "FCSsample", "".join(["Tot_percentage", ".txt"])]))
+    # create empty dataframe
+    dfCounts = pd.DataFrame(index=range(min(unique_Phenograph), max(unique_Phenograph) + 1))
+    # generate Tot_counts file
+    for i in range(len(unique_filename)):
+        dfCounts[unique_filename[i]] = df.loc[df['file_name'] == unique_filename[i]].Phenograph.value_counts().reindex(
+            df.Phenograph.unique(),
+            fill_value=0)
+    # save
+    dfCounts.to_csv("/".join([outfold, "FCSsample", "".join(["Tot_counts", ".txt"])]))
+    # save samples
     for i in head:
         df.loc[df[df.columns[0]] == i].drop(columns=[removec[0], removec[1]]).to_csv(
             "/".join([outfold, "FCSsample", "".join([str(i), "_", name, ".csv"])]),
@@ -311,21 +363,14 @@ def validationplot(marker,alldf,outfold,name):
     """
     data = alldf.copy()
     tsne = alldf.copy()
-    head = data[data.columns[0]].unique().tolist()
-    removec = []
-    removec += [col for col in data.columns if 'event' in col]
-    removec += [col for col in data.columns if 'file_name' in col]
-    removec += [col for col in data.columns if 'Phenograph' in col]
-    removec += [col for col in data.columns if 'Tsne_1' in col]
-    removec += [col for col in data.columns if 'Tsne_2' in col]
-    data.drop(columns=[removec[0],removec[1]], axis=1, inplace=True)
-    data = data.loc[data[removec[2]] >= 0]
+    data.drop(columns=['event','file_name'], axis=1, inplace=True)
+    data = data.loc[data['Phenograph'] >= 0]
     for i in range(len(marker)):
-        data.drop("\""+marker[i]+"\"", axis=1, inplace=True)
-    y = data[removec[2]].values.flatten()
-    X = data.drop(columns=[removec[2],removec[3],removec[4]]).values
+        data.drop(marker[i], axis=1, inplace=True)
+    y = data['Phenograph'].values.flatten()
+    X = data.drop(columns=['Phenograph','Tsne_1','Tsne_2']).values
     # n_clusters = [int(data[removec[2]].max() + 1)][0] old command
-    n_clusters = [int(data[removec[2]].max())][0]
+    n_clusters = [int(data['Phenograph'].max())][0]
     # fig, (ax1, ax2) = plt.subplots(1, 1)
     # fig.set_size_inches(18, 7)
     f = plt.figure(figsize=(18, 7))
@@ -384,7 +429,7 @@ def validationplot(marker,alldf,outfold,name):
     plt.savefig("/".join([outfold, "".join([name, "_validation"])]))
 
 
-def tsneplot(x, colors,outfold, name):
+def tsneplot(x, colors,outfold, name,kind):
     """
 
     :param x:
@@ -402,7 +447,7 @@ def tsneplot(x, colors,outfold, name):
     # create a scatter plot.
     f = plt.figure(figsize=(8, 8))
     ax = plt.subplot(aspect='equal')
-    scatter = ax.scatter(x[:,0], x[:,1], lw=0, s=40,alpha=0.3, c=palette[colors.values.astype(np.int)])
+    scatter = ax.scatter(x[:,0], x[:,1], lw=0, s=40,alpha=0.3, c=palette[colors.astype(np.int)])
     plt.xlim(-25, 25)
     plt.ylim(-25, 25)
     ax.axis('off')
@@ -421,5 +466,7 @@ def tsneplot(x, colors,outfold, name):
         txts.append(txt)
 
     # produce a legend with the unique colors from the scatter
-    plt.savefig("/".join([outfold, name]))
+    plt.title("Data embedded into two dimensions by {}".format(kind),
+              fontsize=12)
+    plt.savefig("/".join([outfold, "".join([name,"_",kind])]))
     return f, ax, scatter, txts

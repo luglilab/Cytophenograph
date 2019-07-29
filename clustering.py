@@ -60,7 +60,7 @@ def runphenograph(inputmatrix, outputfolder,prefix,kcoev,thread):
     cluster_frame = cluster_frame[cluster_frame["cluster"] != -1] #
     cluster_frame["cluster"] = dfMerge.groupby("cluster")["cluster"].count()
     cluster_frame.to_csv("".join([outputfolder,prefix,"_cluster_info.csv"]),sep="\t",header=True)
-    print('Clustering successful', flush=True)
+    print('\nClustering successful', flush=True)
 
 
 if __name__ == '__main__':
