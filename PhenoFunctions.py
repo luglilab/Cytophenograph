@@ -25,7 +25,7 @@ sns.set_style('darkgrid')
 sns.set_palette('muted')
 sns.set_context("notebook", font_scale=1.5,
                 rc={"lines.linewidth": 2.5})
-RS = 123
+
 
 
 def loadmarkers(markerfile):
@@ -143,7 +143,7 @@ def filenameeventinfor(csvfolder):
 
 def runphenograph(marker, concdf, kcoev, thread, outfold, name):
     """
-
+    Function for Phenograph analysis
     :param marker:
     :param concdf:
     :param kcoev:
@@ -152,32 +152,44 @@ def runphenograph(marker, concdf, kcoev, thread, outfold, name):
     :param name:
     :return:
     """
-    print("Start Phenograph")
+    print("Start Phenograph with k{}".format(kcoev))
+    # copy df
     data = concdf.copy()
+    # remove markers
     for i in range(len(marker)):
         data.drop(marker[i], axis=1, inplace=True)
+    # write input matrix of phenograph
     data.to_csv("/".join([outfold, "".join([name, "_clusters.txt"])]), sep="\t",
                 header=True, index=False)
+    # command to use old R script
     # Rscript = shutil.which('Rscript')
     # PhenoR = "/".join([os.path.dirname(os.path.abspath(__file__)), "Phenograph.R"])
     # subprocess.call(['{0} {1} -i {2} -k {3} -o {4} -n {5}'.format(Rscript, PhenoR,
     #                                                               "/".join([outfold, "".join([name, "_clusters.txt"])]),
     #                                                               kcoev, outfold, name)], shell=True)
+    # Run Phenograph
     communities, graph, Q = pg.cluster(data.values, k=int(kcoev),
                                        directed=True,
                                        min_cluster_size=1,
                                        n_jobs=thread)
+    # create dataframe with Phenograph output
     dfPheno = pd.DataFrame(communities)
+    # shift of one unit the name of cluster
+    dfPheno["Phenograph"] = dfPheno[0]+1
+    # remove first column
+    dfPheno = dfPheno.drop(columns=[0],axis=1)
+    # merge data with phenograph output
     dfMerge = pd.merge(data, dfPheno, left_index=True, right_index=True, how='left')
+    # write file with phenograph output
     dfPheno.to_csv("/".join([outfold, "".join([name, "_clusters.txt"])]),
                    sep="\t",
                    header=True, index=False)
-    dfMerge = dfMerge.rename(columns={0: 'Phenograph'})
+    # write file with matrix phenograph output
+    # dfMerge = dfMerge.rename(columns={0: 'Phenograph'})
     dfMerge.to_csv("/".join([outfold, "".join([name, "_pheno.txt"])]),
                    sep="\t",
                    header=True, index=False)
-    #dfPheno = pd.read_csv("/".join([outfold,"".join([name,".tsv"])]),sep="\t",header=0)
-    # print('Found {} clusters'.format(len(unique(dfPheno["Phenograph"]))), flush=True)
+    print('Found {} clusters'.format(len(unique(dfPheno["Phenograph"]))), flush=True)
     # create a df groupby with cluster information
     cluster_frame = dfMerge.groupby("Phenograph", as_index=False).median()
     cluster_frame.index += 1
@@ -185,7 +197,6 @@ def runphenograph(marker, concdf, kcoev, thread, outfold, name):
     cluster_frame = cluster_frame[cluster_frame["Phenograph"] != -1]  #
     cluster_frame["Phenograph"] = dfMerge.groupby("Phenograph")["Phenograph"].count()
     cluster_frame.to_csv("/".join([outfold,"".join([name,"_cluster_info.csv"])]), sep="\t", header=True)
-    print('', flush=True)
     print('Clustering successful', flush=True)
     return dfMerge
 
@@ -289,66 +300,67 @@ def createdir(dirpath):
 
 def groupbycluster(alldf, outfold, name):
     """
-
+    Function for generation of csv with different clusters
     :param alldf:
     :param outfold:
     :param name:
     :return:
     """
+    # make dir
     createdir("/".join([outfold, "FCScluster"]))
+    # copy dataframe
     df = alldf.copy()
-    head = df[df.columns[-1]].unique().tolist()
-    removec = []
-    removec += [col for col in df.columns if 'event' in col]
-    removec += [col for col in df.columns if 'file_name' in col]
+    # remove columns
+    df = df.drop(columns=['event', 'file_name'])
     # save files
-    for i in head:
-        df.loc[df[df.columns[-1]] == i].drop(columns=[removec[0], removec[1]]).to_csv(
+    for i in range(df["Phenograph"].unique().min(), df["Phenograph"].unique().max()):
+        df.loc[df[df.columns[-1]] == i].to_csv(
             "/".join([outfold, "FCScluster", "".join([name, "_", str(i), ".csv"])]),
             header=True, index=False)
 
 
 def groupbysample(alldf, outfold, name):
     """
-
-    :param alldf:
-    :param outfold:
-    :param name:
-    :return:
+    Function for generation of csv with different clusters
+    :param alldf: Combine output
+    file_name,event,FSC-A,FSC-H,FSC-W,SSC-A,SSC-H,Comp-APC-A,......,Tbet,Time,,Tsne_1,Tsne_2,Phenograph
+    :param outfold: output folder
+    :param name: output name analysis
+    :return: None
     """
+    # make dir
     createdir("/".join([outfold, "FCSsample"]))
-    df = alldf.copy()
-    head = df[df.columns[0]].unique().tolist()
-    removec = []
-    removec += [col for col in df.columns if 'event' in col]
-    removec += [col for col in df.columns if 'file_name' in col]
+    # copy df to new
+    df2 = alldf.copy()
+    # remove columns
+    df2 = df2.drop(columns=['event'])
     # get unique filenames
-    unique_filename = df.file_name.unique()
+    unique_filename = df2.file_name.unique()
     # get unique number of cluster
-    unique_Phenograph = df.Phenograph.unique()
-    # create empty dataframe
-    dfCounts = pd.DataFrame(index=range(min(unique_Phenograph), max(unique_Phenograph) + 1))
+    unique_Phenograph = df2.Phenograph.unique()
+    #
+    dfCounts = pd.DataFrame(index=range(min(unique_Phenograph), max(unique_Phenograph)))
     # generate Tot_percentage file
     for i in range(len(unique_filename)):
-        dfCounts[unique_filename[i]] = df.loc[df['file_name'] == unique_filename[i]].Phenograph.value_counts(
-            normalize=True).reindex(df.Phenograph.unique(), fill_value=0)
+        dfCounts[unique_filename[i]] = df2.loc[df2['file_name'] == unique_filename[i]].Phenograph.value_counts(
+            normalize=True).reindex(df2.Phenograph.unique(), fill_value=0)
     # compute percentage
     dfCounts = dfCounts * 100
     # save
     dfCounts.to_csv("/".join([outfold, "FCSsample", "".join(["Tot_percentage", ".txt"])]))
     # create empty dataframe
-    dfCounts = pd.DataFrame(index=range(min(unique_Phenograph), max(unique_Phenograph) + 1))
+    dfCounts = pd.DataFrame(index=range(min(unique_Phenograph), max(unique_Phenograph)))
     # generate Tot_counts file
     for i in range(len(unique_filename)):
-        dfCounts[unique_filename[i]] = df.loc[df['file_name'] == unique_filename[i]].Phenograph.value_counts().reindex(
-            df.Phenograph.unique(),
+        dfCounts[unique_filename[i]] = df2.loc[df2['file_name'] == unique_filename[i]].Phenograph.value_counts().reindex(
+            df2.Phenograph.unique(),
             fill_value=0)
     # save
     dfCounts.to_csv("/".join([outfold, "FCSsample", "".join(["Tot_counts", ".txt"])]))
     # save samples
-    for i in head:
-        df.loc[df[df.columns[0]] == i].drop(columns=[removec[0], removec[1]]).to_csv(
-            "/".join([outfold, "FCSsample", "".join([str(i), "_", name, ".csv"])]),
+    for i in range(len(unique_filename)):
+        df2.loc[df2[df2.columns[0]] == unique_filename[i]].drop(columns=["file_name"]).to_csv(
+            "/".join([outfold, "FCSsample", "".join([str(unique_filename[i]), "_", name, ".csv"])]),
             header=True, index=False)
 
 
@@ -357,33 +369,36 @@ def validationplot(marker,alldf,outfold,name):
 
     :param marker:
     :param alldf:
+    file_name,event,FSC-A,FSC-H,FSC-W,SSC-A,SSC-H,Comp-APC-A,......,Tbet,Time,,Tsne_1,Tsne_2,Phenograph
     :param outfold:
     :param name:
     :return:
     """
+    # import data and copy df
     data = alldf.copy()
-    tsne = alldf.copy()
+    # remove filename and event
     data.drop(columns=['event','file_name'], axis=1, inplace=True)
+    # remove cluster with -1
     data = data.loc[data['Phenograph'] >= 0]
+    # remove marker
     for i in range(len(marker)):
         data.drop(marker[i], axis=1, inplace=True)
-    y = data['Phenograph'].values.flatten()
-    X = data.drop(columns=['Phenograph','Tsne_1','Tsne_2']).values
-    # n_clusters = [int(data[removec[2]].max() + 1)][0] old command
-    n_clusters = [int(data['Phenograph'].max())][0]
-    # fig, (ax1, ax2) = plt.subplots(1, 1)
-    # fig.set_size_inches(18, 7)
+    # convert series in numpy array ordered
+    y = data['Phenograph'].values
+    # generate matrix with selected channel
+    df = data.drop(columns=['Phenograph','Tsne_1','Tsne_2'])
+    # convert from matrix to values
+    X = df.values
+    #
+    n_clusters = np.unique(data['Phenograph'].values).max()
+    #
     f = plt.figure(figsize=(18, 7))
     plt.style.use('seaborn-white')
     plt.xlim(-1, 1)
     # The (n_clusters+1)*10 is for inserting blank space between silhouette
     # plots of individual clusters, to demarcate them clearly.
     plt.ylim(0, len(X) + (n_clusters + 1) * 10)
-
-
-    # Initialize the clusterer with n_clusters value and a random generator
-    # seed of 10 for reproducibility.
-    # clusterer = KMeans(n_clusters=n_clusters, random_state=10)
+    #
     cluster_labels = y
     silhouette_avg = silhouette_score(X, cluster_labels)
     print("For n_clusters =", n_clusters,
@@ -392,14 +407,13 @@ def validationplot(marker,alldf,outfold,name):
     sample_silhouette_values = silhouette_samples(X, cluster_labels)
 
     y_lower = 10
-    for i in range(1,n_clusters+1):
+    for i in range(1,n_clusters):
         # Aggregate the silhouette scores for samples belonging to
         # cluster i, and sort them
         ith_cluster_silhouette_values = \
             sample_silhouette_values[cluster_labels == i]
 
         ith_cluster_silhouette_values.sort()
-
         size_cluster_i = ith_cluster_silhouette_values.shape[0]
         y_upper = y_lower + size_cluster_i
 
@@ -414,7 +428,7 @@ def validationplot(marker,alldf,outfold,name):
         # Compute the new y_lower for next plot
         y_lower = y_upper + 10  # 10 for the 0 samples
 
-    #plt.title("The silhouette plot for the various clusters.")
+
     plt.xlabel("The silhouette coefficient values ")
     plt.ylabel("Cluster label")
 
@@ -422,43 +436,47 @@ def validationplot(marker,alldf,outfold,name):
     plt.axvline(x=silhouette_avg, color="red", linestyle="--")
 
     plt.yticks([])  # Clear the yaxis labels / ticks
-    plt.xticks([-0.1, 0, 0.2, 0.4, 0.6, 0.8, 1])
+    plt.xticks([-1,-0.8,-0.6,-0.4,-0.2,-0.1, 0, 0.2, 0.4, 0.6, 0.8, 1])
 
-    plt.title(("Silhouette analysis for Phenograph clustering on {0} data with n_clusters = {1}.\n The average silhouette_score is {2}".format(name,n_clusters,silhouette_avg)),
-                 fontsize=14, fontweight='bold')
+    plt.title(("Silhouette analysis for Phenograph clustering on {0} data with n_clusters = {1}.\n"
+               " The average silhouette_score is {2}".format(
+                      name, n_clusters, silhouette_avg)),
+              fontsize=14, fontweight='bold')
     plt.savefig("/".join([outfold, "".join([name, "_validation"])]))
 
 
-def tsneplot(x, colors,outfold, name,kind):
+
+def tsne_umap_plot(x, colors,outfold, name,kind):
     """
 
-    :param x:
-    :param colors:
+    :param x: tsne or umap two columns dataframe
+    Tsne_1  Tsne_2
+    :param colors: should be a single columns with phenograph cluster values
+    Comp-APC-A :: IL2  Comp-APC-H7-A :: TIGIT.....Comp-YG 780_60-A :: Tbet  Phenograph
     :param outfold:
     :param name:
     :return:
     """
+    colors = colors[["Phenograph"]].values
+    x = x.values
     # choose a color palette with seaborn.
     num_classes = len(np.unique(colors))
-    palette = np.array(sns.color_palette("hls", num_classes+1))
-    #print(colors.max())
-    #print((colors.min()))
-    #print(palette)
+    palette = np.array(sns.color_palette("hls", num_classes+1)) # outbound error
     # create a scatter plot.
     f = plt.figure(figsize=(8, 8))
     ax = plt.subplot(aspect='equal')
-    scatter = ax.scatter(x[:,0], x[:,1], lw=0, s=40,alpha=0.3, c=palette[colors.astype(np.int)])
+    scatter = ax.scatter(x[:,0], x[:,1], lw=0, s=15,alpha=0.3, c=palette[colors.flatten()]) #flatten np array
     plt.xlim(-25, 25)
     plt.ylim(-25, 25)
     ax.axis('off')
     ax.axis('tight')
     # add the labels for each digit corresponding to the label
     txts = []
-    for i in range(1,num_classes+1):
+    for i in range(1,num_classes):
 
         # Position of each label at median of data points.
 
-        xtext, ytext = np.median(x[colors == i, :], axis=0)
+        xtext, ytext = np.median(x[colors.flatten() == i, :], axis=0)
         txt = ax.text(xtext, ytext, str(i), fontsize=24)
         txt.set_path_effects([
             PathEffects.Stroke(linewidth=5, foreground="w"),
