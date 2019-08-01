@@ -35,8 +35,11 @@ all_files = glob.glob(os.path.join(options.input_folder, "*.csv"))
 names = [os.path.basename(x) for x in all_files]
 # loop over all files and
 for file_, name in zip(all_files, names):
+    # number of records in file (excludes header)
     n = sum(1 for line in open(file_)) - 1
+    # desired sample size
     s = int(options.downsampleline)
+    # the 0-indexed header will not be included in the skip list
     skip = sorted(random.sample(range(1, n + 1), n - s))
     file_df = pd.read_csv(file_, header=0, skiprows=skip)
     file_df.to_csv("/".join([options.output_folder, "".join([name.split('.')[0], "_", options.downsampleline,
