@@ -313,7 +313,7 @@ def groupbycluster(alldf, outfold, name):
     # remove columns
     df = df.drop(columns=['event', 'file_name'])
     # save files
-    for i in range(df["Phenograph"].unique().min(), df["Phenograph"].unique().max()):
+    for i in range(df["Phenograph"].unique().min(), df["Phenograph"].unique().max()+1):
         df.loc[df[df.columns[-1]] == i].to_csv(
             "/".join([outfold, "FCScluster", "".join([name, "_", str(i), ".csv"])]),
             header=True, index=False)
@@ -339,7 +339,7 @@ def groupbysample(alldf, outfold, name):
     # get unique number of cluster
     unique_Phenograph = df2.Phenograph.unique()
     #
-    dfCounts = pd.DataFrame(index=range(min(unique_Phenograph), max(unique_Phenograph)))
+    dfCounts = pd.DataFrame(index=range(min(unique_Phenograph), max(unique_Phenograph))+1)
     # generate Tot_percentage file
     for i in range(len(unique_filename)):
         dfCounts[unique_filename[i]] = df2.loc[df2['file_name'] == unique_filename[i]].Phenograph.value_counts(
@@ -349,7 +349,7 @@ def groupbysample(alldf, outfold, name):
     # save
     dfCounts.to_csv("/".join([outfold, "FCSsample", "".join(["Tot_percentage", ".txt"])]))
     # create empty dataframe
-    dfCounts = pd.DataFrame(index=range(min(unique_Phenograph), max(unique_Phenograph)))
+    dfCounts = pd.DataFrame(index=range(min(unique_Phenograph), max(unique_Phenograph))+1)
     # generate Tot_counts file
     for i in range(len(unique_filename)):
         dfCounts[unique_filename[i]] = df2.loc[df2['file_name'] == unique_filename[i]].Phenograph.value_counts().reindex(
