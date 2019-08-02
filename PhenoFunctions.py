@@ -339,7 +339,7 @@ def groupbysample(alldf, outfold, name):
     # get unique number of cluster
     unique_Phenograph = df2.Phenograph.unique()
     #
-    dfCounts = pd.DataFrame(index=range(min(unique_Phenograph), max(unique_Phenograph))+1)
+    dfCounts = pd.DataFrame(index=range(min(unique_Phenograph), max(unique_Phenograph)+1))
     # generate Tot_percentage file
     for i in range(len(unique_filename)):
         dfCounts[unique_filename[i]] = df2.loc[df2['file_name'] == unique_filename[i]].Phenograph.value_counts(
@@ -349,7 +349,7 @@ def groupbysample(alldf, outfold, name):
     # save
     dfCounts.to_csv("/".join([outfold, "FCSsample", "".join(["Tot_percentage", ".txt"])]))
     # create empty dataframe
-    dfCounts = pd.DataFrame(index=range(min(unique_Phenograph), max(unique_Phenograph))+1)
+    dfCounts = pd.DataFrame(index=range(min(unique_Phenograph), max(unique_Phenograph)+1))
     # generate Tot_counts file
     for i in range(len(unique_filename)):
         dfCounts[unique_filename[i]] = df2.loc[df2['file_name'] == unique_filename[i]].Phenograph.value_counts().reindex(
@@ -472,7 +472,7 @@ def tsne_umap_plot(x, colors,outfold, name,kind):
     ax.axis('tight')
     # add the labels for each digit corresponding to the label
     txts = []
-    for i in range(1,num_classes):
+    for i in range(1,num_classes+1):
 
         # Position of each label at median of data points.
 
