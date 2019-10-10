@@ -169,7 +169,7 @@ def runphenograph(marker, concdf, kcoev, thread, outfold, name):
     #                                                               kcoev, outfold, name)], shell=True)
     # Run Phenograph
     communities, graph, Q = pg.cluster(data.values, k=int(kcoev),
-                                       directed=True,
+                                       directed=False,prune=False,
                                        min_cluster_size=1,
                                        n_jobs=thread)
     # create dataframe with Phenograph output
@@ -486,5 +486,6 @@ def tsne_umap_plot(x, colors,outfold, name,kind):
     # produce a legend with the unique colors from the scatter
     plt.title("Data embedded into two dimensions by {}".format(kind),
               fontsize=12)
-    plt.savefig("/".join([outfold, "".join([name,"_",kind])]))
+    plt.savefig("/".join([outfold, "".join([name,"_",kind,".eps"])]),format="eps")
+    plt.savefig("/".join([outfold, "".join([name,"_",kind,".pdf"])]),format="pdf")
     return f, ax, scatter, txts
