@@ -4,7 +4,6 @@ import sys
 import pandas as pd
 import phenograph as pg
 from openTSNE import TSNE
-import flowkit as fk
 import seaborn as sns
 import matplotlib as mpl
 mpl.use('Agg')
