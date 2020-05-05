@@ -80,5 +80,6 @@ pip install --user PhenoGraph
 
 
 ```python
+cd ../Cytophenograph/
 python cytophenograph.py --help
 ```
