@@ -60,7 +60,7 @@ Copy the louvain folder where we add a new flagg -s to block the seed to linux-c
 
 
 ```python
-cp -rf /Users/simone/Cytophenograph/phenograph/louvain ./
+cp -rf ../Cytophenograph/phenograph/louvain/ ./
 ```
 
 Copy the scritp core.py where at line 253 user can set the seed (default is 123456)
