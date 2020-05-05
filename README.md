@@ -32,6 +32,7 @@ Create a new environment
 
 ```python
 conda env create -n cytophenograph -f ./Cytophenograph/environment.yml 
+conda activate cytophenograph
 ```
 
 Install Phenograph
@@ -67,7 +68,7 @@ Copy the scritp core.py where at line 253 user can set the seed (default is 1234
 
 
 ```python
-cp /Users/simone/Cytophenograph/phenograph/core.py ./
+cp ../Cytophenograph/phenograph/core.py ./
 ```
 
 Now that the Phenograph package is ready, we can go ahed with the installation
