@@ -1,0 +1,9 @@
+FSC-A
+FSC-H
+SSC-A
+SSC-H
+Time
+<BV510-A>: Aqua
+<BUV496-A>: CD3
+<BUV805-A>: CD8
+<BUV615-A>: CD4
