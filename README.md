@@ -1,6 +1,6 @@
 # Cytophenograph
 
-Identifies subpopulations in high-dimensional single-cell data. Cytophenograph is a computational pipeline that was developed to avoid the disadvantages of manual gating and to help biologist to reproduce their analysis. The pipeline is developed using Python3, the clustering method adopted is a custom version of Phenograph (https://github.com/jacoblevine/PhenoGraph) where we insert a blocked seed. Besides Phenograph pipeline needs the following package installed: Pandas,Numpy,Sklearn for data parsing and exploring and openTSNE,Seaborn,Matplotlib for data visualization. This method is adaptative both in terms of dimensionality and sample size, making it suitable in a range of settings for which single-cell population structure is of interest, including other cancers or healthy tissues, and for use with other emerging single-cell technologies.
+Identifies subpopulations in high-dimensional single-cell data. Cytophenograph is a computational pipeline that was developed to avoid the disadvantages of manual gating. The pipeline is developed using Python3, the clustering method adopted is a custom version of Phenograph (https://github.com/jacoblevine/PhenoGraph) where we insert a blocked seed. Besides Phenograph pipeline needs the following package installed: Pandas,Numpy,Sklearn for data parsing and exploring and openTSNE,Seaborn,Matplotlib for data visualization. This method is adaptative both in terms of dimensionality and sample size, making it suitable in a range of settings for which single-cell population structure is of interest, including other cancers or healthy tissues, and for use with other emerging single-cell technologies.
 
 ## 1) Installation 
 
@@ -32,6 +32,7 @@ Create a new environment
 
 ```python
 conda env create -n cytophenograph -f ./Cytophenograph/environment.yml 
+conda activate cytophenograph
 ```
 
 Install Phenograph
@@ -60,14 +61,14 @@ Copy the louvain folder where we add a new flagg -s to block the seed to linux-c
 
 
 ```python
-cp -rf /Users/simone/Cytophenograph/phenograph/louvain ./
+cp -rf ../Cytophenograph/phenograph/louvain/ ./
 ```
 
 Copy the scritp core.py where at line 253 user can set the seed (default is 123456)
 
 
 ```python
-cp /Users/simone/Cytophenograph/phenograph/core.py ./
+cp ../Cytophenograph/phenograph/core.py ./
 ```
 
 Now that the Phenograph package is ready, we can go ahed with the installation
@@ -79,5 +80,6 @@ pip install --user PhenoGraph
 
 
 ```python
+cd ../Cytophenograph/
 python cytophenograph.py --help
 ```
