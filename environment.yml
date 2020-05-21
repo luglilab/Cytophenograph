@@ -33,7 +33,7 @@ dependencies:
   - opentsne=0.3.11
   - pandas=1.0.3
   - pip=20.0.2
-  - pynndescent=0.3.3
+  - pynndescent=0.4.7
   - pyparsing=2.4.7
   - python=3.8.2
   - python-dateutil=2.8.1
