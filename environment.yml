@@ -21,11 +21,11 @@ dependencies:
   - llvmlite
   - matplotlib
   - matplotlib-base
-  - mkl=2019.4
+  - mkl
   - mkl-service
   - mkl_fft
   - mkl_random
-  - ncurses=6.2
+  - ncurses
   - numba
   - numpy
   - numpy-base
@@ -35,7 +35,7 @@ dependencies:
   - pip
   - pynndescent
   - pyparsing
-  - python=3.8.2
+  - python
   - python-dateutil
   - python_abi
   - pytz
