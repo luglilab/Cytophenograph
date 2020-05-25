@@ -3,53 +3,53 @@ channels:
   - conda-forge
   - defaults
 dependencies:
-  - blas=1.0
-  - ca-certificates=2020.4.5.1
-  - certifi=2020.4.5.1
-  - cycler=0.10.0
-  - freetype=2.9.1
-  - intel-openmp=2019.4
-  - joblib=0.14.1
-  - kiwisolver=1.0.1
+  - blas
+  - ca-certificates
+  - certifi
+  - cycler
+  - freetype
+  - intel-openmp
+  - joblib
+  - kiwisolver
   - libcxx
   - libcxxabi
   - libedit
-  - libffi=3.2.1
+  - libffi
   - libgfortran
-  - libpng=1.6.37
+  - libpng
   - llvm-openmp
-  - llvmlite=0.32.0
-  - matplotlib=3.1.3
-  - matplotlib-base=3.1.3
+  - llvmlite
+  - matplotlib
+  - matplotlib-base
   - mkl=2019.4
-  - mkl-service=2.3.0
-  - mkl_fft=1.0.15
-  - mkl_random=1.1.0
+  - mkl-service
+  - mkl_fft
+  - mkl_random
   - ncurses=6.2
-  - numba=0.49.0
-  - numpy=1.18.1
-  - numpy-base=1.18.1
-  - openssl=1.1.1g
-  - opentsne=0.3.11
-  - pandas=1.0.3
-  - pip=20.0.2
-  - pynndescent=0.4.7
-  - pyparsing=2.4.7
+  - numba
+  - numpy
+  - numpy-base
+  - openssl
+  - opentsne
+  - pandas
+  - pip
+  - pynndescent
+  - pyparsing
   - python=3.8.2
-  - python-dateutil=2.8.1
-  - python_abi=3.8
-  - pytz=2019.3
-  - readline=8.0
-  - scikit-learn=0.22.1
-  - scipy=1.4.1
-  - seaborn=0.10.0
-  - setuptools=46.1.3
-  - six=1.14.0
-  - sqlite=3.31.1
-  - tbb=2020.0
-  - tk=8.6.8
-  - tornado=6.0.4
-  - umap-learn=0.4.2
-  - wheel=0.34.2
-  - xz=5.2.5
-  - zlib=1.2.11
+  - python-dateutil
+  - python_abi
+  - pytz
+  - readline
+  - scikit-learn
+  - scipy
+  - seaborn
+  - setuptools
+  - six
+  - sqlite
+  - tbb
+  - tk
+  - tornado
+  - umap-learn
+  - wheel
+  - xz
+  - zlib
