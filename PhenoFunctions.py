@@ -73,7 +73,7 @@ def checkmarkers(markerfile, data):
         else:
             print("Marker {} not found in Matrix.".format(marker_array[i]))
             sys.exit(1)
- return marker_array
+  return marker_array
 
 
 def fcs2csv(inputfcsfolder, outputcsvfolder):
