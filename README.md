@@ -86,5 +86,5 @@ python cytophenograph.py --help
 Test Execution 
 ```python
 mkdir output
-python cytophenograph.py -i ./CD8_Panel_II_channelvalues_GA/ -o ./output/ -k 300 -m ./marker.txt -n TestCytophenograph -t 10
+python cytophenograph.py -i {Absolute Path}/CD8_Panel_II_channelvalues_GA/ -o {Absolute Path}/output/ -k 300 -m {Absolute Path}/marker.txt -n TestCytophenograph -t 10
 ```
