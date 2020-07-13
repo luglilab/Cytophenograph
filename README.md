@@ -75,7 +75,7 @@ Now that the Phenograph package is ready, we can go ahed with the installation
 
 
 ```python
-pip install --user PhenoGraph
+python setup.py install --user
 ```
 
 
