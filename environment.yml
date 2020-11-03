@@ -26,7 +26,7 @@ dependencies:
   - mkl_fft
   - mkl_random
   - ncurses
-  - numba
+  - numba==0.48.0
   - openssl
   - opentsne
   - pip
@@ -38,7 +38,7 @@ dependencies:
   - pytz
   - readline
   - scikit-learn
-  - scipy
+  - scipy==1.5.2
   - seaborn
   - setuptools
   - six
