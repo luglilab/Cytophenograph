@@ -88,3 +88,9 @@ Test Execution
 mkdir output
 python cytophenograph.py -i {Absolute Path}/CD8_Panel_II_channelvalues_GA/ -o {Absolute Path}/output/ -k 300 -m {Absolute Path}/marker.txt -n TestCytophenograph -t 10
 ```
+
+
+Know Issue -- if you receive the following error "TypeError: Expected list, got numpy.ndarray" you should check the scipy version. To fix it you can run the following command
+```python
+pip install scipy==1.4.1 --use-feature=2020-resolver
+```
