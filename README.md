@@ -39,7 +39,7 @@ Install Phenograph
 
 
 ```python
-git clone https://github.com/jacoblevine/PhenoGraph 
+git clone https://github.com/luglilab/Phenograph_LugliLab
 ```
 
 Move on Phenograph folder
@@ -49,33 +49,16 @@ Move on Phenograph folder
 cd PhenoGraph 
 ```
 
-We discuss with some other users of Phenograph and we modifiy the package in order to fix the seed. Here there is the discussion https://github.com/jacoblevine/PhenoGraph/issues/16 
-So to reproduce the results, first remove the folder louvain
-
-
 ```python
-rm -rf louvain
+pip install --user PhenoGraph
 ```
 
-Copy the louvain folder where we add a new flagg -s to block the seed to linux-community script
-
-
 ```python
-cp -rf ../Cytophenograph/phenograph/louvain/ ./
+pip install scipy==1.4.1 --use-feature=2020-resolver
 ```
 
-Copy the scritp core.py where at line 253 user can set the seed (default is 123456)
-
-
 ```python
-cp ../Cytophenograph/phenograph/core.py ./
-```
-
-Now that the Phenograph package is ready, we can go ahed with the installation
-
-
-```python
-python setup.py install --user
+conda install -c conda-forge umap-learn
 ```
 
 
@@ -83,14 +66,10 @@ python setup.py install --user
 cd ../Cytophenograph/
 python cytophenograph.py --help
 ```
+
+
 Test Execution 
 ```python
 mkdir output
-python cytophenograph.py -i {Absolute Path}/CD8_Panel_II_channelvalues_GA/ -o {Absolute Path}/output/ -k 300 -m {Absolute Path}/marker.txt -n TestCytophenograph -t 10
-```
-
-
-Know Issue -- if you receive the following error "TypeError: Expected list, got numpy.ndarray" you should check the scipy version. To fix it you can run the following command
-```python
-pip install scipy==1.4.1 --use-feature=2020-resolver
+python cytophenograph.py -i ./CD8_Panel_II_channelvalues_GA/ -o ./output/ -k 300 -m ./marker.txt -n TestCytophenograph -t 10
 ```
