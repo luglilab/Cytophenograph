@@ -58,11 +58,37 @@ pip install scipy==1.4.1 --use-feature=2020-resolver
 ```
 
 ```python
+conda install -c conda-forge umap-learn
+```
+
+```python
+conda install -c conda-forge hnswlib
+```
+
+
+```python
+pip install leidenalg==0.7.0
+```
+
+```python
+pip install python-igraph
+```
+
+
+```python
+pip install parc
+```
+
+
+```python
 cd ../Cytophenograph/
 python cytophenograph.py --help
 ```
+
+
 Test Execution 
 ```python
 mkdir output
 python cytophenograph.py -i ./CD8_Panel_II_channelvalues_GA/ -o ./output/ -k 300 -m ./marker.txt -n TestCytophenograph -t 10
 ```
+
