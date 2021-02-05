@@ -45,9 +45,6 @@ git clone https://github.com/luglilab/Phenograph_LugliLab
 Move on Phenograph folder
 
 
-```python
-cd PhenoGraph 
-```
 
 ```python
 pip install -e Phenograph_LugliLab
