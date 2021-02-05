@@ -50,7 +50,7 @@ cd PhenoGraph
 ```
 
 ```python
-pip install --user PhenoGraph
+pip install -e Phenograph_LugliLab
 ```
 
 ```python
