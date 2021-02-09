@@ -32,7 +32,7 @@ Create a new environment
 
 ```python
 conda env create -n cytophenograph2 -f ./Cytophenograph/environment_cytophenograph2.yml
-conda activate cytophenograph
+conda activate cytophenograph2
 ```
 
 Install Phenograph
