@@ -27,8 +27,6 @@ if __name__ == '__main__':
                          thread=int(options.thread),
                          tsne=options.tsne,
                          tool= options.clustering)
-    #DictInfo["Log1"],DictInfo["Log2"] = run.create_logfile()
-    #print(DictInfo["Log1"],DictInfo["Log2"])
     DictInfo["Infofile"] = run.read_info_file()
     DictInfo["List_csv_files"] = run.import_all_event()
     DictInfo["adata_conc"] = run.concatenate_dataframe(DictInfo["Infofile"],DictInfo["List_csv_files"])
