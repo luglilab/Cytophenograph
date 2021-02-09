@@ -63,3 +63,7 @@ python ./Cytophenograph/cytophenograph.v2_0.py -i $abs_path/Cytophenograph/Test_
 # Run Phenograph and Parc
 python ./Cytophenograph/cytophenograph.v2_0.py -i $abs_path/Cytophenograph/Test_dataset/CD8_Panel_II_channelvalues_GA_downSampled/ -o $abs_path/Cytophenograph/output_test -k 300 -m $abs_path/Cytophenograph/Test_dataset/CD8_bulk_markers_to_exclude.txt -n Test -t 10 -p $abs_path/Cytophenograph/Test_dataset/Info_file_bulk_Test.xlsx -c Both
 ```
+# 
+
+Pipeline has been testen on Linux and Mac OS. 
+Know bug:  Scipy  version must <1.4.1 
