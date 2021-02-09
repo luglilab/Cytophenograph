@@ -1,4 +1,0 @@
-File_name	Experiment_name	Conditions	Instrument	Dosages	Timepoint	Individuals	Date	CompensationMatrix
-CD3_30000_Lung41_tumor.fcs	Test	Tumor	FACSymphony	NA	0	41	01012020	/mnt/hpcserver1_datadisk2_spuccio/SP026_dev_cytophenograph/Test_dataset/CompensationMatrix.txt
-CD3_30000_Lung41_blood.fcs	Test	Blood	FACSymphony	NA	0	41	01012020	/mnt/hpcserver1_datadisk2_spuccio/SP026_dev_cytophenograph/Test_dataset/CompensationMatrix.txt
-CD3_30000_HCL270.fcs	Test	Healthy	FACSymphony	NA	0	41	01012020	NA
