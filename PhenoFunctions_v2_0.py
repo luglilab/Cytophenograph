@@ -7,22 +7,16 @@ import sys
 import numpy as np
 import pandas as pd
 import re
-# import seaborn as sb
 import matplotlib.pyplot as plt
-#import scanpy.external as sce
 import phenograph as pg
 import scanpy as sc
-#from sklearn.metrics import silhouette_samples, silhouette_score
 import matplotlib.cm as cm
 import parc
 import umap
 import seaborn as sns
 import matplotlib.patheffects as PathEffects
-#from contextlib import contextmanager,redirect_stderr,redirect_stdout
-# from os import devnull
 import logging
-#warnings.filterwarnings('ignore')
-#warnings.filterwarnings("ignore", message="Numerical issues were encountered ")
+
 
 
 class Cytophenograph:
@@ -48,19 +42,6 @@ class Cytophenograph:
         fh = logging.FileHandler("/".join([self.output_folder,"log.txt"]), "w")
         fh.setFormatter(format)
         self.log.addHandler(fh)
-
-        #self.log = logging.getLogger()
-        #self.log.setLevel(logging.INFO)
-        #self.log.basicConfig(stream=sys.stdout, level=logging.DEBUG)
-        #self.filehandler = logging.StreamHandler(sys.stdout) 
-        #self.filehandler = logging.FileHandler("/".join([self.output_folder,"log.txt"]), "w")
-        #self.stdout_handler = logging.StreamHandler(sys.stdout)
-        #self.filehandler.setLevel(logging.DEBUG)
-        #formatter = logging.Formatter( "%(asctime)s %(threadName)-11s %(levelname)-10s %(message)s")
-        #self.filehandler.setFormatter(formatter)
-        #self.stdout_handler.setFormatter(formatter)
-        #self.log.addHandler(self.filehandler)
-        #self.log.addHandler(self.stdout_handler)
         self.log.info("Name of this analysis: {}".format(marker_list))
         self.log.info("Input folder: {}".format(input_folder))
         self.log.info("Output folder: {}".format(output_folder))
@@ -69,9 +50,6 @@ class Cytophenograph:
         self.log.info("Marker list file: {}".format(marker_list))
         self.log.info("Clustering tool option: {}".format(tool))
         
-    def write(self, message):
-        self.terminal.write(message)
-        self.log.write(message)  
 
     def flush(self):
         #this flush method is needed for python 3 compatibility.
@@ -404,6 +382,9 @@ class Cytophenograph:
         return palette
 
     def exporting(self, adata):
+        """
+        Export to h5ad file. 
+        """
         old_names = adata.var_names
         new_names = []
         for _ in range(len(old_names)):
@@ -419,128 +400,3 @@ class Cytophenograph:
         adata.write("/".join([self.output_folder, ".".join(["_".join([self.analysis_name, self.k_coef]), "h5ad"])]))
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-def validationplot(markertoexclude, adata,outfold,name):
-    """
-    :param marker:
-    :param alldf:
-    file_name,event,FSC-A,FSC-H,FSC-W,SSC-A,SSC-H,Comp-APC-A,......,Tbet,Time,,Tsne_1,Tsne_2,Phenograph
-    :param outfold:
-    :param name:
-    :return:
-    """
-    marker = adata.var_names.to_list()
-    markertoinclude = [i for i in marker if i not in markertoexclude]
-    data = adata[:,markertoinclude].to_df()
-    
-    # convert series in numpy array ordered
-    y = adata.obs["cluster"].values 
-    # convert from matrix to values
-    X = data.values
-    #
-    n_clusters =len(np.unique(adata.obs['cluster']))
-    #
-    f = plt.figure(figsize=(18, 7))
-    plt.style.use('seaborn-white')
-    plt.xlim(-1, 1)
-    # The (n_clusters+1)*10 is for inserting blank space between silhouette
-    # plots of individual clusters, to demarcate them clearly.
-    plt.ylim(0, len(X) + (n_clusters + 1) * 10)
-    #
-    cluster_labels = y
-    silhouette_avg = silhouette_score(X, cluster_labels)
-    print("For n_clusters =", n_clusters,
-          "The average silhouette_score is :", silhouette_avg)
-    # Compute the silhouette scores for each sample
-    sample_silhouette_values = silhouette_samples(X, cluster_labels)
-
-    y_lower = 10
-    for i in range(1,n_clusters+1):
-        # Aggregate the silhouette scores for samples belonging to
-        # cluster i, and sort them
-        ith_cluster_silhouette_values = \
-            sample_silhouette_values[cluster_labels == i]
-
-        ith_cluster_silhouette_values.sort()
-        size_cluster_i = ith_cluster_silhouette_values.shape[0]
-        y_upper = y_lower + size_cluster_i
-
-        color = cm.nipy_spectral(float(i) / n_clusters+1)
-        plt.fill_betweenx(np.arange(y_lower, y_upper),0, ith_cluster_silhouette_values,
-                          facecolor=color, edgecolor=color, alpha=0.7)
-
-        # Label the silhouette plots with their cluster numbers at the middle
-        plt.text(-0.05, y_lower + 0.5 * size_cluster_i, str(i))
-
-        # Compute the new y_lower for next plot
-        y_lower = y_upper + 10  # 10 for the 0 samples
-
-
-    plt.xlabel("The silhouette coefficient values ")
-    plt.ylabel("Cluster label")
-
-    # The vertical line for average silhouette score of all the values
-    plt.axvline(x=silhouette_avg, color="red", linestyle="--")
-
-    plt.yticks([])  # Clear the yaxis labels / ticks
-    plt.xticks([-1,-0.8,-0.6,-0.4,-0.2,-0.1, 0, 0.2, 0.4, 0.6, 0.8, 1])
-
-    plt.title(("Silhouette analysis for Phenograph clustering on {0} data with n_clusters = {1}.\n"
-               " The average silhouette_score is {2}".format(
-                      name, n_clusters, silhouette_avg)),
-              fontsize=14, fontweight='bold')
-    plt.savefig("/".join([outfold, "".join([name, "_validation"])]))
-
-
-def exporting(adata,outfold,name,kcoev):
-    old_names = adata.var_names
-    new_names = []
-    for _ in range(len(old_names)):
-        if old_names[_].startswith("Comp-"):
-            new_names.append(old_names[_].split(":: ")[-1])
-        else:
-            new_names.append(old_names[_])
-    adata.var = pd.DataFrame(old_names,new_names)
-    del adata.var[0]
-    adata.var['original_names'] = old_names
-    adata.obs[str(kcoev)] = adata.obs['cluster'].astype("str")
-    del adata.obs['cluster']
-    adata.write("/".join([outfold,".".join(["_".join([name,kcoev]),"h5ad"])])) 
-
-def lineplot(markertoexclude, adata,outfold,name,pal):
-    marker = adata.var_names.to_list()
-    markertoinclude = [i for i in marker if i not in markertoexclude]
-    data = adata[:,markertoinclude].to_df()
-    data["cluster"] = adata.obs["cluster"].values
-    mmm = data.groupby(['cluster']).median()
-    plt.figure(figsize=(15,10))
-    x = [i for i in range(len(mmm.columns))]
-    my_xticks = mmm.columns
-    plt.xticks(x, my_xticks)
-    for i in range(len(mmm)):
-        plt.plot(x, mmm.iloc[i],c=pal[i+1])
-    for i in range(1,len(mmm.columns)):
-        plt.axvline(x=i, linestyle="dashdot", linewidth=0.5,c="lightgray")
-    plt.xticks(rotation=90)
-    plt.ylabel('Median channel value')
-    plt.legend(mmm.index)
-    plt.savefig("/".join([outfold, "".join([name, "_lineplot"])]))
