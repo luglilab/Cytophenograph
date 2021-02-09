@@ -1,0 +1,31 @@
+Metadata-Version: 2.1
+Name: PhenoGraph
+Version: 1.5.7
+Summary: Graph-based clustering for high-dimensional single-cell data
+Home-page: https://github.com/dpeerlab/PhenoGraph.git
+Author: Jacob Levine
+Author-email: jl3545@columbia.edu
+License: LICENSE
+Description: PhenoGraph for Python3
+        ======================
+        
+        
+        
+        
+        
+        To install PhenoGraph, simply run the setup script:
+        
+            pip install PhenoGraph
+        
+        
+        
+Platform: UNKNOWN
+Classifier: Programming Language :: Python :: 3
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Operating System :: OS Independent
+Classifier: Operating System :: POSIX :: Linux
+Classifier: Development Status :: 5 - Production/Stable
+Classifier: Topic :: Scientific/Engineering :: Bio-Informatics
+Classifier: Topic :: Scientific/Engineering :: Visualization
+Requires-Python: >=3.6
+Description-Content-Type: text/markdown
