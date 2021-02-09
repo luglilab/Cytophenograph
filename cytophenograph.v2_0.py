@@ -40,7 +40,7 @@ if __name__ == '__main__':
         DictInfo["phenograph_adata"] = run.runclustering(DictInfo["markertoexclude"], DictInfo["adata_conc"])
         run.groupbycluster(DictInfo["phenograph_adata"],"Phenograph")
         run.groupbysample(DictInfo["phenograph_adata"],"Phenograph")
-        run.exporting(DictInfo["parc_adata"])
+        run.exporting(DictInfo["phenograph_adata"])
     elif options.clustering == "Parc":
         print("Clustering tool selected is: Parc")
         DictInfo["parc_adata"] = run.runparc(DictInfo["markertoexclude"], DictInfo["adata_conc"])
