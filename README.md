@@ -71,5 +71,18 @@ anndata 0.7.4 requires pandas>=1.0, but you'll have pandas 0.25.3 which is incom
 phenograph 1.5.7 requires scipy>=1.5.1, but you'll have scipy 1.4.1 which is incompatible."
 Please ignore this warning. 
 
+**File preparation:**
+
+ - [ Input folder]: This folder must contains **only** csv file exported from flowjo after compensation and trasformation. CSV must have same identical header. 
+ - [Marker list]: This file must contains the features (channel or marker) to exclude. Please check that channel is included in the header of all csv files. (Example here: https://github.com/luglilab/Cytophenograph/blob/master/Test_dataset/CD8_bulk_markers_to_exclude.txt )
+ - [Pheno File]: Excel file (Example here: https://github.com/luglilab/Cytophenograph/blob/master/Test_dataset/Info_file_bulk_Test.xlsx ) with the following column "Sample Cell_type EXP ID Time_point Condition Count". Number of row should be the same of input CSV. 
+
+
+**Output**
+ - [Output Folder]: Empty folder where user will find .h5ad file ( ready to use for Cellxgene https://chanzuckerberg.github.io/cellxgene/), FCScluster[Phenograph or Parc] folder and FCSsample[Phenograph or Parc] folder with Tot_counts.txt and Tot_percentage.txtand with absolute and percentage frequency and log.txt with analysis execution information. 
+ 
+ **Graphics output**
+ h5ad file with UMAP and others graphical output could be open with Cellxgene ( https://chanzuckerberg.github.io/cellxgene/ ). 
+
 ### Please cite:
 Alvisi G, Brummelman J, Puccio S, Mazza EM, Tomada EP, Losurdo A, Zanon V, Peano C, Colombo FS, Scarpa A, Alloisio M, Vasanthakumar A, Roychoudhuri R, Kallikourdis M, Pagani M, Lopci E, Novellis P, Blume J, Kallies A, Veronesi G, Lugli E. IRF4 instructs effector Treg differentiation and immune suppression in human cancer. J Clin Invest. 2020 Jun 1;130(6):3137-3150. doi: 10.1172/JCI130426. PMID: 32125291; PMCID: PMC7260038.
