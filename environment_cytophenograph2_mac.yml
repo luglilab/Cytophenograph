@@ -1,0 +1,18 @@
+name: cytophenograph2
+channels:
+  - bpteague
+  - bioconda
+  - conda-forge
+  - defaults
+dependencies:
+  - conda-forge::python==3.7.0
+  - conda-forge::pip
+  - bioconda::scanpy
+  - hnswlib
+  - pip
+  - conda-forge::openpyxl
+  - pip:
+    - leidenalg==0.8.3
+    - parc
+    - umap-learn
+
