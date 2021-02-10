@@ -29,6 +29,7 @@ dependencies:
   - numba==0.48.0
   - openssl
   - opentsne
+  - parc
   - pip
   - pynndescent
   - pyparsing
