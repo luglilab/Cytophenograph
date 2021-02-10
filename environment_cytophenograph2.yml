@@ -170,6 +170,9 @@ dependencies:
   - yaml=0.2.5=h516909a_0
   - zlib=1.2.11=h516909a_1010
   - zstd=1.4.8=ha95c52a_1
+  - scanpy
+  - openpyxl
+  - xlrd
   - pip:
     - colorlog==4.7.2
     - leidenalg==0.8.3
