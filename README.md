@@ -29,12 +29,13 @@ git clone https://github.com/luglilab/Cytophenograph
 
 Create a new environment
 
-
-```python
 for installation on linux machine execute this command:
+```python
 conda env create -n cytophenograph2 -f ./Cytophenograph/environment_cytophenograph2_linux.yml
 conda activate cytophenograph2
+```
 for installation on mac machine execute this command:
+```python
 conda env create -n cytophenograph2 -f ./Cytophenograph/environment_cytophenograph2_mac.yml
 conda activate cytophenograph2
 ```
