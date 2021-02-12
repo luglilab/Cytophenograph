@@ -6,6 +6,7 @@ dependencies:
   - blas
   - ca-certificates
   - certifi
+  - cellxgene
   - cycler
   - freetype
   - intel-openmp
