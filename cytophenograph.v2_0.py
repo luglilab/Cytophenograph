@@ -1,3 +1,4 @@
+from version import __version__
 import optparse
 from PhenoFunctions_v2_0 import *
 import os
@@ -12,11 +13,13 @@ parser.add_option('-t', action="store", dest="thread", help='Number of jobs.')
 parser.add_option('-p', action="store", dest="pheno", help='Excel file with the following columns "Sample	Cell_type	EXP	ID	Time_point	Condition	Count", that will be integrated as metadata.')
 parser.add_option('-c', type='choice', choices=['Phenograph', 'Parc', 'Both'],
                   dest="clustering",default = "Phenograph", help='Tool selecting for clustering. Both will execute Phenograph and Parc.')
-parser.add_option('-d', type='choice', choices=[True, False],dest="tsne",default = False, help='')
 options, args = parser.parse_args()
 
 
 if __name__ == '__main__':
+    print("Script name: cytophenograph" )
+    print("Script version:",__version__)
+    print("Start")
     DictInfo = dict()
 
     run = Cytophenograph(info_file=options.pheno, input_folder=options.input_folder,
@@ -25,11 +28,10 @@ if __name__ == '__main__':
                          marker_list=options.markerlist,
                          analysis_name=options.analysis_name,
                          thread=int(options.thread),
-                         tsne=options.tsne,
                          tool= options.clustering)
     DictInfo["Infofile"] = run.read_info_file()
     DictInfo["List_csv_files"] = run.import_all_event()
-    DictInfo["adata_conc"] = run.concatenate_dataframe(DictInfo["Infofile"],DictInfo["List_csv_files"])
+    DictInfo["adata_conc"]  = run.concatenate_dataframe(DictInfo["Infofile"],DictInfo["List_csv_files"])
     DictInfo["pathmarkerfile"] , DictInfo["basenamemarkerfilepath"]  = run.loadmarkers()
     DictInfo["markertoexclude"]  = run.checkmarkers(DictInfo["adata_conc"])
     if options.clustering == "Phenograph":
@@ -37,13 +39,13 @@ if __name__ == '__main__':
         DictInfo["phenograph_adata"] = run.runclustering(DictInfo["markertoexclude"], DictInfo["adata_conc"])
         run.groupbycluster(DictInfo["phenograph_adata"],"Phenograph")
         run.groupbysample(DictInfo["phenograph_adata"],"Phenograph")
-        run.exporting(DictInfo["phenograph_adata"])
+        run.exporting(DictInfo["phenograph_adata"],options.clustering)
     elif options.clustering == "Parc":
         print("Clustering tool selected is: Parc")
         DictInfo["parc_adata"] = run.runparc(DictInfo["markertoexclude"], DictInfo["adata_conc"])
         run.groupbycluster(DictInfo["parc_adata"],"Parc")
         run.groupbysample(DictInfo["parc_adata"],"Parc")
-        run.exporting(DictInfo["parc_adata"])
+        run.exporting(DictInfo["parc_adata"],options.clustering)
     elif options.clustering == "Both":
         print("Clustering tool selected is: Phenograph and Parc")
         DictInfo["phenograph_adata"] = run.runclustering(DictInfo["markertoexclude"], DictInfo["adata_conc"])
@@ -52,4 +54,5 @@ if __name__ == '__main__':
         DictInfo["parc_adata"] = run.runparc(DictInfo["markertoexclude"], DictInfo["phenograph_adata"])
         run.groupbycluster(DictInfo["parc_adata"],"Parc")
         run.groupbysample(DictInfo["parc_adata"],"Parc")
-        run.exporting(DictInfo["parc_adata"])
+        run.exporting(DictInfo["parc_adata"],options.clustering)
+    print("End")

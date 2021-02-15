@@ -1,3 +1,4 @@
+from version import __version__
 import warnings
 warnings.filterwarnings("ignore", category=FutureWarning)
 import anndata
@@ -20,7 +21,7 @@ import logging
 
 
 class Cytophenograph:
-    def __init__(self, info_file, input_folder, output_folder, k_coef, marker_list, analysis_name, thread, tsne,tool):
+    def __init__(self, info_file, input_folder, output_folder, k_coef, marker_list, analysis_name, thread,tool):
         self.info_file = info_file
         self.input_folder = input_folder
         self.output_folder = output_folder
@@ -28,11 +29,11 @@ class Cytophenograph:
         self.marker_list = marker_list
         self.analysis_name = analysis_name
         self.thread = thread
-        self.tsne = tsne
         self.tool = tool
-        sys.stdout = open("/".join([self.output_folder,"log.txt"]), 'a')
+        self.tmp_df = pd.DataFrame()
+        # sys.stdout = open("/".join([self.output_folder,"log.txt"]), 'a')
         self.log = logging.getLogger()
-        self.log.setLevel(logging.DEBUG)
+        self.log.setLevel(logging.INFO)
         format = logging.Formatter("%(asctime)s %(threadName)-11s %(levelname)-10s %(message)s")
         #
         ch = logging.StreamHandler(sys.stdout)
@@ -124,22 +125,22 @@ class Cytophenograph:
                                 ann_tmp.obs['Sample'] = pandas_df_list[i].index[0][:-2]
                                 #
                                 cell_type = info_file['Cell_type'].loc[info_file['Sample']== pandas_df_list[i].index[0][:-2]]
-                                ann_tmp.obs['Cell_type'] = cell_type
+                                ann_tmp.obs['Cell_type'] = cell_type.to_string().split(" ")[-1]
                                 #
                                 exp = info_file['EXP'].loc[info_file['Sample']== pandas_df_list[i].index[0][:-2]]
-                                ann_tmp.obs['EXP'] = exp
+                                ann_tmp.obs['EXP'] = exp.to_string().split(" ")[-1]
                                 #
                                 id = info_file['ID'].loc[info_file['Sample']== pandas_df_list[i].index[0][:-2]]
-                                ann_tmp.obs['ID'] = id
+                                ann_tmp.obs['ID'] = id.to_string().split(" ")[-1]
                                 #
                                 time_point = info_file['Time_point'].loc[info_file['Sample']== pandas_df_list[i].index[0][:-2]]
-                                ann_tmp.obs['Time_point'] = time_point
+                                ann_tmp.obs['Time_point'] = time_point.to_string().split(" ")[-1]
                                 #
                                 condition = info_file['Condition'].loc[info_file['Sample']== pandas_df_list[i].index[0][:-2]]
-                                ann_tmp.obs['Condition'] = condition
+                                ann_tmp.obs['Condition'] = condition.to_string().split(" ")[-1]
                                 #
                                 count = info_file['Count'].loc[info_file['Sample']== pandas_df_list[i].index[0][:-2]]
-                                ann_tmp.obs['Count'] = count
+                                ann_tmp.obs['Count'] = count.to_string().split(" ")[-1]
                                 anndata_list.append(ann_tmp)
                             else:
                                 print("Error, this file {0} is not in the column Sample of Infofile. \n Please check sample name and Infofile".format(pandas_df_list[i].index[0][:-2]))
@@ -151,7 +152,11 @@ class Cytophenograph:
                         adata_conc = tmp.concatenate(anndata_list)
                     except (ValueError, Exception):
                         print("Error. Please check Info File Header or CSV header.")
-                        self.log.error("Error. Please check Info File Header or CSV header.")   
+                        self.log.error("Error. Please check Info File Header or CSV header.")
+        self.tmp_df = pd.DataFrame(adata_conc.X,index=adata_conc.obs.index)
+        self.tmp_df.columns = adata_conc.var_names
+        #self.tmp_df.to_csv("/".join([self.output_folder, ".".join(["_".join([self.analysis_name]), "csv"])]),header=True, index=False)
+        pd.merge(self.tmp_df,adata_conc.obs,left_index=True, right_index=True).to_csv("/".join([self.output_folder, ".".join(["_".join([self.analysis_name]), "txt"])]),header=True, index=False)
         return adata_conc
 
     def loadmarkers(self):
@@ -198,6 +203,8 @@ class Cytophenograph:
         marker = adata.var_names.to_list()
         markertoinclude = [i for i in marker if i not in markertoexclude]
         data = adata[:, markertoinclude].to_df()
+        self.log.info("Markers used for Phenograph clustering:")
+        self.log.info(data.columns)
         communities, graph, Q = pg.cluster(data.values, k=int(self.k_coef),directed=False,
         prune=False,min_cluster_size=1,n_jobs=int(self.thread))
         # create dataframe with Phenograph output
@@ -209,18 +216,13 @@ class Cytophenograph:
         dfPheno.set_index(adata.obs.index, inplace=True)
         adata.obs['cluster'] = dfPheno
         adata.obs['Phenograph_cluster'] = dfPheno
-        #print(adata.obs['Sample'].unique())
         reducer = umap.UMAP(random_state=42, n_neighbors=10, min_dist=0.001)
         embedding = reducer.fit_transform(data.values)
         adata.obsm['X_umap'] = embedding
-        if self.tsne:
-            from openTSNE import TSNE
-            tsne = TSNE(n_components=2, perplexity=30, learning_rate=200,
-                        n_jobs=self.thread, initialization="pca", metric="euclidean",
-                        early_exaggeration_iter=250, early_exaggeration=12, n_iter=1000,
-                        neighbors="exact", negative_gradient_method="bh")
-            embedding = tsne.fit(data.values)
-            adata.obsm['X_tsne'] = embedding
+        self.tmp_df = self.tmp_df.astype(int)
+        self.tmp_df['UMAP_1'] = embedding[:,0]
+        self.tmp_df['UMAP_2'] = embedding[:,1]
+        self.tmp_df.to_csv("/".join([self.output_folder, ".".join(["_".join([self.analysis_name]), "csv"])]),header=True, index=False)
         return adata
 
     def runparc(self, markertoexclude, adata):
@@ -234,6 +236,8 @@ class Cytophenograph:
         marker = adata.var_names.to_list()
         markertoinclude = [i for i in marker if i not in markertoexclude]
         data = adata[:, markertoinclude].to_df()
+        self.log.info("Markers used for PARC clustering:")
+        self.log.info(data.columns)
         p = parc.PARC(data.values, random_seed=42,
                       jac_std_global='median',
                       small_pop = 100,
@@ -246,14 +250,10 @@ class Cytophenograph:
                             min_dist=0.001)
         embedding = reducer.fit_transform(data.values)
         adata.obsm['X_umap'] = embedding
-        #print(adata.obs['Sample'].unique())
-        if self.tsne:
-            tsne = TSNE(n_components=2, perplexity=30, learning_rate=200,
-                        n_jobs=self.thread, initialization="pca", metric="euclidean",
-                        early_exaggeration_iter=250, early_exaggeration=12, n_iter=1000,
-                        neighbors="exact", negative_gradient_method="bh")
-            embedding = tsne.fit(data.values)
-            adata.obsm['X_tsne'] = embedding
+        self.tmp_df = self.tmp_df.astype(int)
+        self.tmp_df['UMAP_1'] = embedding[:,0]
+        self.tmp_df['UMAP_2'] = embedding[:,1]
+        self.tmp_df.to_csv("/".join([self.output_folder, ".".join(["_".join([self.analysis_name]), "csv"])]),header=True, index=False)
         return adata
 
     def createdir(self,dirpath):
@@ -381,22 +381,38 @@ class Cytophenograph:
         # return f, ax, scatter, txts
         return palette
 
-    def exporting(self, adata):
+    def exporting(self, adata,tool):
         """
         Export to h5ad file. 
         """
-        old_names = adata.var_names
-        new_names = []
-        for _ in range(len(old_names)):
-            if old_names[_].startswith("Comp-"):
-                new_names.append(old_names[_].split(":: ")[-1])
-            else:
-                new_names.append(old_names[_])
-        adata.var = pd.DataFrame(old_names, new_names)
-        del adata.var[0]
-        adata.var['original_names'] = old_names
-        adata.obs["Phenograph_"+str(self.k_coef)] = adata.obs['cluster'].astype("str")
-        del adata.obs['cluster']
-        adata.write("/".join([self.output_folder, ".".join(["_".join([self.analysis_name, self.k_coef]), "h5ad"])]))
+        if (tool != "Both"): 
+            old_names = adata.var_names
+            new_names = []
+            for _ in range(len(old_names)):
+                if old_names[_].startswith("Comp-"):
+                    new_names.append(old_names[_].split(":: ")[-1])
+                else:
+                    new_names.append(old_names[_])
+            adata.var = pd.DataFrame(old_names, new_names)
+            del adata.var[0]
+            adata.var['original_names'] = old_names
+            adata.obs[tool+"_"+str(self.k_coef)] = adata.obs['cluster'].astype("str")
+            del adata.obs['cluster']
+            adata.write("/".join([self.output_folder, ".".join(["_".join([self.analysis_name, self.k_coef]), "h5ad"])]))
+        else:
+            old_names = adata.var_names
+            new_names = []
+            for _ in range(len(old_names)):
+                if old_names[_].startswith("Comp-"):
+                    new_names.append(old_names[_].split(":: ")[-1])
+                else:
+                    new_names.append(old_names[_])
+            adata.var = pd.DataFrame(old_names, new_names)
+            del adata.var[0]
+            adata.var['original_names'] = old_names
+            del adata.obs['cluster']
+            adata.write("/".join([self.output_folder, ".".join(["_".join([self.analysis_name]), "h5ad"])]))
+            
+
 
 
