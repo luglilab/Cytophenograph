@@ -1,18 +1,20 @@
-name: cytophenograph2
-channels:
-  - bpteague
-  - bioconda
-  - conda-forge
-  - defaults
-dependencies:
-  - conda-forge::python==3.7.0
-  - conda-forge::pip
-  - bioconda::scanpy
-  - hnswlib
-  - pip
-  - conda-forge::openpyxl
-  - pip:
-    - leidenalg==0.8.3
-    - parc
-    - umap-learn
-
+# You can use this file to create a conda environment for this pipeline:
+# #   conda env create -f environment.yml
+ name: cytophenograph2
+ channels:
+   - conda-forge
+   - bioconda
+   - defaults
+ dependencies:
+ ## conda-forge packages
+   - conda-forge::python=3.6.1
+   - conda-forge::umap-learn
+   - conda-forge::openpyxl
+ ## bioconda packages
+   - bioconda::scanpy
+   - bioconda::cellxgene
+   - pip  
+   - pip:
+     - leidenalg==0.8.3
+     - parc
+     - xlrd==1.2.0 

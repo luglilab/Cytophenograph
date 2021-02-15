@@ -1,54 +1,20 @@
-name: cytophenograph
-channels:
-  - conda-forge
-  - defaults
-dependencies:
-  - blas
-  - ca-certificates
-  - certifi
-  - cellxgene
-  - cycler
-  - freetype
-  - intel-openmp
-  - joblib
-  - kiwisolver
-  - libcxx
-  - libcxxabi
-  - libedit
-  - libffi
-  - libgfortran
-  - libpng
-  - llvm-openmp
-  - llvmlite
-  - matplotlib
-  - matplotlib-base
-  - mkl
-  - mkl-service
-  - mkl_fft
-  - mkl_random
-  - ncurses
-  - numba==0.48.0
-  - openssl
-  - opentsne
-  - parc
-  - pip
-  - pynndescent
-  - pyparsing
-  - python
-  - python-dateutil
-  - python_abi
-  - pytz
-  - readline
-  - scikit-learn
-  - scipy==1.5.2
-  - seaborn
-  - setuptools
-  - six
-  - sqlite
-  - tbb
-  - tk
-  - tornado
-  - umap-learn
-  - wheel
-  - xz
-  - zlib
+# You can use this file to create a conda environment for this pipeline:
+# #   conda env create -f environment.yml
+ name: cytophenograph2
+ channels:
+   - conda-forge
+   - bioconda
+   - defaults
+ dependencies:
+ ## conda-forge packages
+   - conda-forge::python=3.6.1
+   - conda-forge::umap-learn
+   - conda-forge::openpyxl
+ ## bioconda packages
+   - bioconda::scanpy
+   - bioconda::cellxgene
+   - pip  
+   - pip:
+     - leidenalg==0.8.3
+     - parc
+     - xlrd==1.2.0 
