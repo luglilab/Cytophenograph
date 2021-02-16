@@ -8,20 +8,17 @@ import sys
 import numpy as np
 import pandas as pd
 import re
-import matplotlib.pyplot as plt
 import phenograph as pg
 import scanpy as sc
-import matplotlib.cm as cm
 import parc
 import umap
-import seaborn as sns
-import matplotlib.patheffects as PathEffects
 import logging
-
+from sklearn import preprocessing
+import matplotlib.pyplot as plt
 
 
 class Cytophenograph:
-    def __init__(self, info_file, input_folder, output_folder, k_coef, marker_list, analysis_name, thread,tool):
+    def __init__(self, info_file, input_folder, output_folder, k_coef, marker_list, analysis_name, thread,tool,scale):
         self.info_file = info_file
         self.input_folder = input_folder
         self.output_folder = output_folder
@@ -31,6 +28,7 @@ class Cytophenograph:
         self.thread = thread
         self.tool = tool
         self.tmp_df = pd.DataFrame()
+        self.scale = scale
         # sys.stdout = open("/".join([self.output_folder,"log.txt"]), 'a')
         self.log = logging.getLogger()
         self.log.setLevel(logging.INFO)
@@ -51,13 +49,6 @@ class Cytophenograph:
         self.log.info("Marker list file: {}".format(marker_list))
         self.log.info("Clustering tool option: {}".format(tool))
         
-
-    def flush(self):
-        #this flush method is needed for python 3 compatibility.
-        #this handles the flush command by doing nothing.
-        #you might want to specify some extra behavior here.
-        pass  
-
     def read_info_file(self):
         """
         Read info file methods
@@ -205,23 +196,35 @@ class Cytophenograph:
         data = adata[:, markertoinclude].to_df()
         self.log.info("Markers used for Phenograph clustering:")
         self.log.info(data.columns)
+        if (self.scale == True):
+            min_max_scaler = preprocessing.MinMaxScaler((1, 100))
+            x_scaled = min_max_scaler.fit_transform(data.values)
+            data = pd.DataFrame(x_scaled,
+            columns=data.columns)
+        self.new_head=[]
+        self.new_head.append([column.split("::")[-1] for column in data])
+        data.columns = self.new_head
+        data.diff().hist(color="k", alpha=0.5, bins=50, grid=False, xlabelsize=8,ylabelsize=8)
+        plt.tight_layout()
+        plt.savefig("/".join([self.output_folder, ".".join(["_".join([self.analysis_name]), "pdf"])]))
         communities, graph, Q = pg.cluster(data.values, k=int(self.k_coef),directed=False,
         prune=False,min_cluster_size=1,n_jobs=int(self.thread))
         # create dataframe with Phenograph output
-        dfPheno = pd.DataFrame(communities)
+        self.dfPheno = pd.DataFrame(communities)
         # shift of one unit the name of cluster
-        dfPheno["Phenograph"] = dfPheno[0] + 1
+        self.dfPheno["Phenograph"] = self.dfPheno[0] + 1
         # remove first column
-        dfPheno = dfPheno.drop(columns=[0], axis=1)
-        dfPheno.set_index(adata.obs.index, inplace=True)
-        adata.obs['cluster'] = dfPheno
-        adata.obs['Phenograph_cluster'] = dfPheno
+        self.dfPheno = self.dfPheno.drop(columns=[0], axis=1)
+        self.dfPheno.set_index(adata.obs.index, inplace=True)
+        adata.obs['cluster'] = self.dfPheno
+        adata.obs['Phenograph_cluster'] = self.dfPheno
         reducer = umap.UMAP(random_state=42, n_neighbors=10, min_dist=0.001)
         embedding = reducer.fit_transform(data.values)
         adata.obsm['X_umap'] = embedding
         self.tmp_df = self.tmp_df.astype(int)
         self.tmp_df['UMAP_1'] = embedding[:,0]
         self.tmp_df['UMAP_2'] = embedding[:,1]
+        self.tmp_df['Cluster_Phenograph'] = self.dfPheno
         self.tmp_df.to_csv("/".join([self.output_folder, ".".join(["_".join([self.analysis_name]), "csv"])]),header=True, index=False)
         return adata
 
@@ -238,6 +241,17 @@ class Cytophenograph:
         data = adata[:, markertoinclude].to_df()
         self.log.info("Markers used for PARC clustering:")
         self.log.info(data.columns)
+        if (self.scale == True):
+            min_max_scaler = preprocessing.MinMaxScaler((1, 100))
+            x_scaled = min_max_scaler.fit_transform(data.values)
+            data = pd.DataFrame(x_scaled,
+            columns=data.columns)
+        self.new_head=[]
+        self.new_head.append([column.split("::")[-1] for column in data])
+        data.columns = self.new_head
+        data.diff().hist(color="k", alpha=0.5, bins=50, grid=False, xlabelsize=8,ylabelsize=8)
+        plt.tight_layout()
+        plt.savefig("/".join([self.output_folder, ".".join(["_".join([self.analysis_name]), "pdf"])]))
         p = parc.PARC(data.values, random_seed=42,
                       jac_std_global='median',
                       small_pop = 100,
@@ -253,6 +267,9 @@ class Cytophenograph:
         self.tmp_df = self.tmp_df.astype(int)
         self.tmp_df['UMAP_1'] = embedding[:,0]
         self.tmp_df['UMAP_2'] = embedding[:,1]
+        if (self.tool == "Both"):
+            self.tmp_df['Cluster_Phenograph'] = self.dfPheno
+        self.tmp_df['Cluster_PARC'] = [str(i) for i in p.labels]
         self.tmp_df.to_csv("/".join([self.output_folder, ".".join(["_".join([self.analysis_name]), "csv"])]),header=True, index=False)
         return adata
 
@@ -332,87 +349,28 @@ class Cytophenograph:
                                                                     ".csv"])]),
                 header=True, index=False)
 
-
-    def suppress_stdout_stderr(self):
-        """A context manager that redirects stdout and stderr to devnull"""
-        with open(devnull, 'w') as fnull:
-            with redirect_stderr(fnull) as err, redirect_stdout(fnull) as out:
-                yield (err, out)
-
-    def tsne_umap_plot(self,x, cluster, kind):
-        """
-        Tsne_1  Tsne_2
-        :param x:
-        :param cluster:
-        :param kind:
-        :return:
-        """
-        colors = cluster
-        # x = x.values
-        # choose a color palette with seaborn.
-        num_classes = len(np.unique(colors))
-        palette = np.array(sns.color_palette("hls", num_classes + 1))  # outbound error
-        # create a scatter plot.
-        f = plt.figure(figsize=(8, 8))
-        ax = plt.subplot(aspect='equal')
-        scatter = ax.scatter(x[:, 0], x[:, 1], lw=0, s=15, alpha=0.5, c=palette[colors])  # flatten np array
-        plt.xlim(-25, 25)
-        plt.ylim(-25, 25)
-        ax.axis('off')
-        ax.axis('tight')
-        # add the labels for each digit corresponding to the label
-        txts = []
-        for i in range(1, num_classes + 1):
-            # Position of each label at median of data points.
-
-            xtext, ytext = np.median(x[colors == i, :], axis=0)
-            txt = ax.text(xtext, ytext, str(i), fontsize=24)
-            txt.set_path_effects([
-                PathEffects.Stroke(linewidth=5, foreground="w"),
-                PathEffects.Normal()])
-            txts.append(txt)
-
-        # produce a legend with the unique colors from the scatter
-        plt.title("Data embedded into two dimensions by {}".format(kind), fontsize=12)
-        plt.savefig("/".join([self.output_folder, "".join([self.analysis_name, "_", kind, ".pdf"])]), format="pdf")
-        #ax.set_rasterized(True)
-        #plt.savefig("/".join([self.output_folder, "".join([self.analysis_name, "_", kind, ".eps"])]), format="eps")
-        # plt.show()
-        # return f, ax, scatter, txts
-        return palette
-
     def exporting(self, adata,tool):
         """
         Export to h5ad file. 
         """
-        if (tool != "Both"): 
-            old_names = adata.var_names
-            new_names = []
-            for _ in range(len(old_names)):
-                if old_names[_].startswith("Comp-"):
-                    new_names.append(old_names[_].split(":: ")[-1])
-                else:
-                    new_names.append(old_names[_])
-            adata.var = pd.DataFrame(old_names, new_names)
-            del adata.var[0]
-            adata.var['original_names'] = old_names
+        old_names = adata.var_names
+        new_names = []
+        for _ in range(len(old_names)):
+            if old_names[_].startswith("Comp-"):
+                new_names.append(old_names[_].split(":: ")[-1])
+            else:
+                new_names.append(old_names[_])
+        adata.var = pd.DataFrame(old_names, new_names)
+        del adata.var[0]
+        adata.var['original_names'] = old_names
+        if (tool == "Phenograph"):
             adata.obs[tool+"_"+str(self.k_coef)] = adata.obs['cluster'].astype("str")
             del adata.obs['cluster']
             adata.write("/".join([self.output_folder, ".".join(["_".join([self.analysis_name, self.k_coef]), "h5ad"])]))
-        else:
-            old_names = adata.var_names
-            new_names = []
-            for _ in range(len(old_names)):
-                if old_names[_].startswith("Comp-"):
-                    new_names.append(old_names[_].split(":: ")[-1])
-                else:
-                    new_names.append(old_names[_])
-            adata.var = pd.DataFrame(old_names, new_names)
-            del adata.var[0]
-            adata.var['original_names'] = old_names
+        elif (tool == "Parc"):
+            adata.write("/".join([self.output_folder, ".".join(["_".join([self.analysis_name]), "h5ad"])]))
+        elif (tool == "Both"):
+            adata.obs["Phenograph_cluster"] = self.dfPheno.astype("str")
             del adata.obs['cluster']
             adata.write("/".join([self.output_folder, ".".join(["_".join([self.analysis_name]), "h5ad"])]))
             
-
-
-
