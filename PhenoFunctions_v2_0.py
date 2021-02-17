@@ -134,19 +134,16 @@ class Cytophenograph:
                                 ann_tmp.obs['Count'] = count.to_string().split(" ")[-1]
                                 anndata_list.append(ann_tmp)
                             else:
-                                print("Error, this file {0} is not in the column Sample of Infofile. \n Please check sample name and Infofile".format(pandas_df_list[i].index[0][:-2]))
-                                # print(pandas_df_list[i].index[0][:-2])
-                                # print(Sample_list)
+                                self.log.error("Error, this file {0} is not in the column Sample of Infofile. \n Please check sample name and Infofile".format(pandas_df_list[i].index[0][:-2]))
                                 sys.exit(1)
                         tmp = anndata_list[0]
                         anndata_list.pop(0)
                         adata_conc = tmp.concatenate(anndata_list)
                     except (ValueError, Exception):
-                        print("Error. Please check Info File Header or CSV header.")
                         self.log.error("Error. Please check Info File Header or CSV header.")
+                        sys.exit(1)
         self.tmp_df = pd.DataFrame(adata_conc.X,index=adata_conc.obs.index)
         self.tmp_df.columns = adata_conc.var_names
-        #self.tmp_df.to_csv("/".join([self.output_folder, ".".join(["_".join([self.analysis_name]), "csv"])]),header=True, index=False)
         pd.merge(self.tmp_df,adata_conc.obs,left_index=True, right_index=True).to_csv("/".join([self.output_folder, ".".join(["_".join([self.analysis_name]), "txt"])]),header=True, index=False)
         return adata_conc
 
@@ -298,7 +295,14 @@ class Cytophenograph:
         adata.obs['cluster'] = adata.obs['cluster'].astype(int)
         for _ in range(adata.obs['cluster'].unique().min(), adata.obs['cluster'].unique().max() + 1):
             tmp = adata[adata.obs['cluster'].isin([_])].to_df()
-            tmp['Phenograph'] = _
+            tmp['UMAP_1'] = adata[adata.obs['cluster'].isin([_])].obsm['X_umap'][:,0]
+            tmp['UMAP_2'] = adata[adata.obs['cluster'].isin([_])].obsm['X_umap'][:,1]
+            if (self.tool == "Phenograph"):
+                tmp['Phenograph'] = _
+            elif (self.tool == "Parc"):
+                tmp['Parc'] = _
+            else:
+                tmp['Cluster'] = _
             tmp.to_csv("/".join([self.output_folder, "".join(["FCScluster",tool]), "".join([self.analysis_name, "_", str(_), ".csv"])]),
                        header=True, index=False)
 
@@ -319,6 +323,14 @@ class Cytophenograph:
         # change index
         tmp.set_index(adata.obs['Sample'], inplace=True)
         # create columns
+        tmp['UMAP_1'] = adata.obsm['X_umap'][:,0]
+        tmp['UMAP_2'] = adata.obsm['X_umap'][:,1]
+        if (self.tool == "Phenograph"):
+            tmp["Phenograph"] = adata.obs['cluster'].values
+        elif (self.tool == "Parc"):
+            tmp["Parc"] = adata.obs['cluster'].values
+        else:
+            tmp["cluster"] = adata.obs['cluster'].values
         tmp["cluster"] = adata.obs['cluster'].values
         # get unique filenames
         unique_filename = adata.obs['Sample'].unique()
@@ -342,6 +354,7 @@ class Cytophenograph:
                 tmp.cluster.unique(), fill_value=0)
         # save
         dfCounts.to_csv("/".join([self.output_folder, "".join(["FCSsample",tool]), "".join(["Tot_counts", ".txt"])]))
+        del tmp['cluster']
         # save samples
         for i in range(len(unique_filename)):
             dfCounts[unique_filename[i]] = tmp.loc[tmp.index == unique_filename[i]].to_csv(
@@ -366,8 +379,13 @@ class Cytophenograph:
         if (tool == "Phenograph"):
             adata.obs[tool+"_"+str(self.k_coef)] = adata.obs['cluster'].astype("str")
             del adata.obs['cluster']
+            del adata.obs[tool+"_"+str(self.k_coef)]
+            adata.obs['Phenograph_cluster'] = adata.obs['Phenograph_cluster'].astype('category')
             adata.write("/".join([self.output_folder, ".".join(["_".join([self.analysis_name, self.k_coef]), "h5ad"])]))
         elif (tool == "Parc"):
+            adata.obs['Parc_cluster'] = adata.obs['cluster'].astype("str")
+            adata.obs['Parc_cluster'] = adata.obs['Parc_cluster'].astype('category') 
+            del adata.obs['cluster']
             adata.write("/".join([self.output_folder, ".".join(["_".join([self.analysis_name]), "h5ad"])]))
         elif (tool == "Both"):
             adata.obs["Phenograph_cluster"] = self.dfPheno.astype("str")
