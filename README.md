@@ -9,7 +9,7 @@ Miniconda is a Python distribution, package manager, and virtual environment sol
 
 Begin by downloading Miniconda and following the associated installation instructions.
 
-https://docs.conda.io/en/latest/miniconda.htm
+https://docs.conda.io/en/latest/miniconda.html
 
 ### Create your cytophenograph environment and install the dependences
 
