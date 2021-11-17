@@ -45,6 +45,7 @@ Install Phenograph
 
 ```python
 pip install -e ./Cytophenograph/Phenograph_LugliLab --use-feature=2020-resolver
+pip install -e ./Cytophenograph/FlowSOM_LugliLab --use-feature=2020-resolver
 ```
 
 Move on Phenograph folder
