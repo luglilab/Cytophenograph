@@ -163,7 +163,6 @@ dependencies:
     - certipy==0.1.3
     - cluster==1.4.1.post3
     - fcsparser==0.2.4
-    - flowsom==0.1.1
     - greenlet==1.1.2
     - igraph==0.9.8
     - importlib-resources==5.4.0
