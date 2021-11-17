@@ -12,9 +12,9 @@
    - conda-forge::openpyxl
  ## bioconda packages
    - bioconda::scanpy
-   - bioconda::cellxgene
    - pip  
    - pip:
-     - leidenalg==0.8.3
+     - leidenalg-0.7.0-cp36-cp36m-win_amd64.whl
      - parc
-     - xlrd==1.2.0 
+     - xlrd==1.2.0
+     - hnswlib 

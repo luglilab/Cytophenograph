@@ -1,13 +1,10 @@
-from version import __version__
 import warnings
 warnings.filterwarnings("ignore", category=FutureWarning)
 import anndata
 import glob
 import os
 import sys
-import numpy as np
 import pandas as pd
-import re
 import phenograph as pg
 import scanpy as sc
 import parc
@@ -15,7 +12,9 @@ import umap
 import logging
 from sklearn import preprocessing
 import matplotlib.pyplot as plt
-
+from flowsom import flowsom as flowsom
+import tempfile
+tmp = tempfile.NamedTemporaryFile()
 
 class Cytophenograph:
     def __init__(self, info_file, input_folder, output_folder, k_coef, marker_list, analysis_name, thread,tool,scale):
@@ -124,10 +123,10 @@ class Cytophenograph:
                                 id = info_file['ID'].loc[info_file['Sample']== pandas_df_list[i].index[0][:-2]]
                                 ann_tmp.obs['ID'] = id.to_string().split(" ")[-1]
                                 #
-                                time_point = info_file['Time_point'].loc[info_file['Sample']== pandas_df_list[i].index[0][:-2]]
+                                time_point = info_file['Time_point'].loc[info_file['Sample'] == pandas_df_list[i].index[0][:-2]]
                                 ann_tmp.obs['Time_point'] = time_point.to_string().split(" ")[-1]
                                 #
-                                condition = info_file['Condition'].loc[info_file['Sample']== pandas_df_list[i].index[0][:-2]]
+                                condition = info_file['Condition'].loc[info_file['Sample'] == pandas_df_list[i].index[0][:-2]]
                                 ann_tmp.obs['Condition'] = condition.to_string().split(" ")[-1]
                                 #
                                 count = info_file['Count'].loc[info_file['Sample']== pandas_df_list[i].index[0][:-2]]
@@ -142,9 +141,13 @@ class Cytophenograph:
                     except (ValueError, Exception):
                         self.log.error("Error. Please check Info File Header or CSV header.")
                         sys.exit(1)
-        self.tmp_df = pd.DataFrame(adata_conc.X,index=adata_conc.obs.index)
+        else:
+            self.log.error("Error. Please check Info File Header or CSV header.")
+            sys.exit(1)
+        self.tmp_df = pd.DataFrame(adata_conc.X, index=adata_conc.obs.index)
         self.tmp_df.columns = adata_conc.var_names
-        pd.merge(self.tmp_df,adata_conc.obs,left_index=True, right_index=True).to_csv("/".join([self.output_folder, ".".join(["_".join([self.analysis_name]), "txt"])]),header=True, index=False)
+        pd.merge(self.tmp_df,adata_conc.obs,
+                 left_index=True, right_index=True).to_csv("/".join([self.output_folder, ".".join(["_".join([self.analysis_name]), "txt"])]),header=True, index=False)
         return adata_conc
 
     def loadmarkers(self):
@@ -201,10 +204,11 @@ class Cytophenograph:
         self.new_head=[]
         self.new_head.append([column.split("::")[-1] for column in data])
         data.columns = self.new_head
-        data.diff().hist(color="k", alpha=0.5, bins=50, grid=False, xlabelsize=8,ylabelsize=8)
-        plt.tight_layout()
-        plt.savefig("/".join([self.output_folder, ".".join(["_".join([self.analysis_name]), "pdf"])]))
-        communities, graph, Q = pg.cluster(data.values, k=int(self.k_coef),directed=False,
+        # data.diff().hist(color="k", alpha=0.5, bins=50, grid=False, xlabelsize=8,ylabelsize=8)
+        # plt.tight_layout()
+        # plt.savefig("/".join([self.output_folder, ".".join(["_".join([self.analysis_name]), "pdf"])]))
+        communities, graph, Q = pg.cluster(data.values, k=int(self.k_coef),
+                                           directed=False,
         prune=False,min_cluster_size=1,n_jobs=int(self.thread))
         # create dataframe with Phenograph output
         self.dfPheno = pd.DataFrame(communities)
@@ -215,14 +219,15 @@ class Cytophenograph:
         self.dfPheno.set_index(adata.obs.index, inplace=True)
         adata.obs['cluster'] = self.dfPheno
         adata.obs['Phenograph_cluster'] = self.dfPheno
-        reducer = umap.UMAP(random_state=42, n_neighbors=10, min_dist=0.001)
+        reducer = umap.UMAP(random_state=42, n_neighbors=10, min_dist=0.01)
         embedding = reducer.fit_transform(data.values)
         adata.obsm['X_umap'] = embedding
         self.tmp_df = self.tmp_df.astype(int)
-        self.tmp_df['UMAP_1'] = embedding[:,0]
-        self.tmp_df['UMAP_2'] = embedding[:,1]
+        self.tmp_df['UMAP_1'] = embedding[:, 0]
+        self.tmp_df['UMAP_2'] = embedding[:, 1]
         self.tmp_df['Cluster_Phenograph'] = self.dfPheno
-        self.tmp_df.to_csv("/".join([self.output_folder, ".".join(["_".join([self.analysis_name]), "csv"])]),header=True, index=False)
+        self.tmp_df.to_csv("/".join([self.output_folder, ".".join(["_".join([self.analysis_name]), "csv"])]),
+                           header=True, index=False)
         return adata
 
     def runparc(self, markertoexclude, adata):
@@ -258,7 +263,7 @@ class Cytophenograph:
         adata.obs['Parc_cluster'] = [str(i) for i in p.labels]
         reducer=umap.UMAP(random_state=42,
                             n_neighbors=10,
-                            min_dist=0.001)
+                            min_dist=0.01)
         embedding = reducer.fit_transform(data.values)
         adata.obsm['X_umap'] = embedding
         self.tmp_df = self.tmp_df.astype(int)
@@ -268,6 +273,56 @@ class Cytophenograph:
             self.tmp_df['Cluster_Phenograph'] = self.dfPheno
         self.tmp_df['Cluster_PARC'] = [str(i) for i in p.labels]
         self.tmp_df.to_csv("/".join([self.output_folder, ".".join(["_".join([self.analysis_name]), "csv"])]),header=True, index=False)
+        return adata
+
+    def runflowsom(self, markertoexclude, adata):
+        """
+        function for execution of
+        :param adata:
+        :param markertoexclude:
+        :return:
+        """
+        adata.to_df().to_csv(tmp.name, header=True, index=False)
+        tt = flowsom(tmp.name, if_fcs=False,if_drop=True,drop_col=markertoexclude)
+        sample_df = tt.df
+        tt.som_mapping(50, 50, tt.df.shape[1],
+                       sigma =2.5,
+                       lr=0.1,
+                       batch_size=100,
+                       neighborhood='gaussian',
+                       if_fcs=False,
+                       seed=10)
+        from sklearn.cluster import AgglomerativeClustering
+        tt.meta_clustering(AgglomerativeClustering,
+                           # cluster_class: e.g. KMeans, a cluster class, like "from sklearn.cluster import KMeans"
+                           5,  # min_n: e.g. 10, the min proposed number of clusters
+                           31,  # max_n: e.g. 31, the max proposed number of clusters
+                           10,  # iter_n: e.g 10, the iteration times for each number of clusters
+                           resample_proportion=0.6,
+                           # resample_proportion: e.g 0.6, the proportion of re-sampling when computing clustering
+                           verbose=False  # verbose: e.g. False, whether print out the clustering process
+                           )
+        tt.labeling()
+        # output_df = tt.df  # new column added: category
+        output_tf_df = tt.tf_df  # new column added: category
+        output_tf_df.set_index(adata.obs.index, inplace=True)
+        adata.obs['cluster'] = output_tf_df['category']
+        TMP = adata.obs['cluster'].astype(int).sort_values().unique()
+        res_dct = {TMP[i]: i for i in range(len(TMP))}
+        adata.obs['cluster'] = adata.obs['cluster'].map(res_dct)
+        adata.obs['cluster'] = adata.obs['cluster'] + 1
+        adata.obs['Flowsom_cluster'] = adata.obs['cluster']
+        reducer = umap.UMAP(random_state=42,
+                             n_neighbors=10,
+                             min_dist=0.01)
+        embedding = reducer.fit_transform(sample_df.values)
+        adata.obsm['X_umap'] = embedding
+        self.tmp_df = self.tmp_df.astype(int)
+        self.tmp_df['UMAP_1'] = embedding[:, 0]
+        self.tmp_df['UMAP_2'] = embedding[:, 1]
+        self.tmp_df['Cluster_Flowsom'] = output_tf_df['category']
+        self.tmp_df.to_csv("/".join([self.output_folder, ".".join(["_".join([self.analysis_name]), "csv"])]),
+                           header=True, index=False)
         return adata
 
     def createdir(self,dirpath):
@@ -284,10 +339,11 @@ class Cytophenograph:
             print(" ".join(["Directory", dirpath.split("/")[-1], "already exists"]))
             self.log.info(" ".join(["Directory", dirpath.split("/")[-1], "already exists"]))
 
-    def groupbycluster(self, adata,tool):
+    def groupbycluster(self, adata, tool):
         """
         Function for generation of csv with different clusters
         :param adata:
+        :parm tool:
         :return:
         """
         # make dir
@@ -302,8 +358,10 @@ class Cytophenograph:
             elif (self.tool == "Parc"):
                 tmp['Parc'] = _
             else:
-                tmp['Cluster'] = _
-            tmp.to_csv("/".join([self.output_folder, "".join(["FCScluster",tool]), "".join([self.analysis_name, "_", str(_), ".csv"])]),
+                tmp['Flowsom'] = _-1
+            tmp.to_csv("/".join([self.output_folder, "".join(["FCScluster",
+                                                              tool]), "".join([self.analysis_name, "_",
+                                                                               str(_), ".csv"])]),
                        header=True, index=False)
 
     def groupbysample(self, adata, tool):
@@ -330,7 +388,7 @@ class Cytophenograph:
         elif (self.tool == "Parc"):
             tmp["Parc"] = adata.obs['cluster'].values
         else:
-            tmp["cluster"] = adata.obs['cluster'].values
+            tmp["Flowsom"] = adata.obs['cluster'].values
         tmp["cluster"] = adata.obs['cluster'].values
         # get unique filenames
         unique_filename = adata.obs['Sample'].unique()
@@ -381,14 +439,24 @@ class Cytophenograph:
             del adata.obs['cluster']
             del adata.obs[tool+"_"+str(self.k_coef)]
             adata.obs['Phenograph_cluster'] = adata.obs['Phenograph_cluster'].astype('category')
+            adata.layers['raw_data'] = adata.X
+            sc.pp.scale(adata, zero_center=True, max_value=3, copy=False, layer=None, obsm=None)
             adata.write("/".join([self.output_folder, ".".join(["_".join([self.analysis_name, self.k_coef]), "h5ad"])]))
         elif (tool == "Parc"):
             adata.obs['Parc_cluster'] = adata.obs['cluster'].astype("str")
             adata.obs['Parc_cluster'] = adata.obs['Parc_cluster'].astype('category') 
             del adata.obs['cluster']
+            adata.layers['raw_data'] = adata.X
+            sc.pp.scale(adata, zero_center=True, max_value=3, copy=False, layer=None, obsm=None)
             adata.write("/".join([self.output_folder, ".".join(["_".join([self.analysis_name]), "h5ad"])]))
-        elif (tool == "Both"):
-            adata.obs["Phenograph_cluster"] = self.dfPheno.astype("str")
+        elif (tool == "Flowsom"):
+            # adata.obs["Flowsom_cluster"] = self.dfPheno.astype("str")
             del adata.obs['cluster']
+            adata.layers['raw_data'] = adata.X
+            sc.pp.scale(adata, zero_center=True, max_value=3, copy=False,layer=None, obsm=None)
             adata.write("/".join([self.output_folder, ".".join(["_".join([self.analysis_name]), "h5ad"])]))
-            
+        tmp = pd.DataFrame(adata.obsm['X_umap'])
+        tmp.set_index(adata.obs.index, inplace=True)
+        tmp.rename(columns={0: "Umap1", 1: "Umap2"}, inplace=True)
+        tmp = pd.merge(tmp, adata.obs, left_index=True, right_index=True)
+

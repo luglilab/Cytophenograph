@@ -6,19 +6,6 @@ Home-page: https://github.com/dpeerlab/PhenoGraph.git
 Author: Jacob Levine
 Author-email: jl3545@columbia.edu
 License: LICENSE
-Description: PhenoGraph for Python3
-        ======================
-        
-        
-        
-        
-        
-        To install PhenoGraph, simply run the setup script:
-        
-            pip install PhenoGraph
-        
-        
-        
 Platform: UNKNOWN
 Classifier: Programming Language :: Python :: 3
 Classifier: License :: OSI Approved :: MIT License
@@ -29,3 +16,19 @@ Classifier: Topic :: Scientific/Engineering :: Bio-Informatics
 Classifier: Topic :: Scientific/Engineering :: Visualization
 Requires-Python: >=3.6
 Description-Content-Type: text/markdown
+License-File: LICENSE
+
+PhenoGraph for Python3
+======================
+
+
+
+
+
+To install PhenoGraph, simply run the setup script:
+
+    pip install PhenoGraph
+
+
+
+

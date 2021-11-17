@@ -137,8 +137,8 @@ def parallel_jaccard_kernel(idx):
 
     graph = sp.lil_matrix((n, n), dtype=float)
     for i, tup in enumerate(jaccard_values):
-        graph.rows[i] = tup[0]
-        graph.data[i] = tup[1]
+        graph.rows[i] = tup[0].tolist()
+        graph.data[i] = tup[1].tolist()
 
     i, j = graph.nonzero()
     s = graph.tocoo().data

@@ -1,0 +1,16 @@
+FSC-A
+FSC-H
+FSC-W
+SSC-A
+SSC-H
+SSC-W
+Comp-APC-H7-A :: CD16-32
+Comp-APC-R700-A :: Ly6C
+Comp-B 710_50-A :: LIN
+Comp-BUV563-A :: CD45
+Comp-BUV661-A :: CD115
+Comp-BV510-A :: AQUA
+Comp-BV711-A :: CD48
+Comp-BV786-A :: SiglecF
+Comp-FITC-A :: CD34
+Time 
