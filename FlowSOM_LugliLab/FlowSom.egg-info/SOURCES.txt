@@ -1,0 +1,11 @@
+README.md
+setup.py
+FlowSom.egg-info/PKG-INFO
+FlowSom.egg-info/SOURCES.txt
+FlowSom.egg-info/dependency_links.txt
+FlowSom.egg-info/requires.txt
+FlowSom.egg-info/top_level.txt
+flowsom/__init__.py
+flowsom/__version__.py
+flowsom/cluster.py
+flowsom/flowsomtool.py

@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 import random
 
-from cluster import *
+from .cluster import *
 from collections import Counter
 from FlowCytometryTools import test_data_dir, test_data_file
 from FlowCytometryTools import FCMeasurement
