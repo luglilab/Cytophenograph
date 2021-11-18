@@ -1,3 +1,4 @@
+.DS_Store
 LICENSE
 PKG-INFO
 README.md
@@ -17,6 +18,7 @@ examples/data/RB_genes_human.txt
 examples/data/filtered_gene_bc_matrices/hg19/barcodes.tsv
 examples/data/filtered_gene_bc_matrices/hg19/genes.tsv
 examples/data/filtered_gene_bc_matrices/hg19/matrix.mtx
+phenograph/.DS_Store
 phenograph/__init__.py
 phenograph/bruteforce_nn.py
 phenograph/classify.py
@@ -25,11 +27,17 @@ phenograph/core.py
 phenograph/louvain-readme.txt
 phenograph/phenograph-readme.txt
 phenograph/version.py
+phenograph/__pycache__/__init__.cpython-36.pyc
 phenograph/__pycache__/__init__.cpython-37.pyc
+phenograph/__pycache__/bruteforce_nn.cpython-36.pyc
 phenograph/__pycache__/bruteforce_nn.cpython-37.pyc
+phenograph/__pycache__/classify.cpython-36.pyc
 phenograph/__pycache__/classify.cpython-37.pyc
+phenograph/__pycache__/cluster.cpython-36.pyc
 phenograph/__pycache__/cluster.cpython-37.pyc
+phenograph/__pycache__/core.cpython-36.pyc
 phenograph/__pycache__/core.cpython-37.pyc
+phenograph/__pycache__/version.cpython-36.pyc
 phenograph/__pycache__/version.cpython-37.pyc
 phenograph/louvain/community
 phenograph/louvain/community.exe

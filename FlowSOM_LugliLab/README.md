@@ -1,0 +1,115 @@
+# FlowSOM
+
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/Hatchin/FlowSOM/pulls)
+[![GitHub license](https://img.shields.io/github/license/Naereen/StrapDown.js.svg)](https://github.com/Hatchin/Mann-Whitney-U-Test/blob/master/LICENSE)
+[![PYPI version](https://img.shields.io/badge/pypi_version-0.1.1-green.svg)](https://pypi.org/project/FlowSom/)
+
+
+This repository contains a Python implementation of [FlowSOM](http://bioconductor.org/packages/release/bioc/html/FlowSOM.html) algorithm for clustering and visualizing a mass cytometry data set. 
+
+For more details about the algorithm, please check ([En](https://hatchin.netlify.com/flowsom/?utm_source=github_flowsom_repo_read_me_en&utm_medium=flowsom_repo_readme&utm_campaign=read_me)|[中](https://hatchin.netlify.com/zh/flowsom/?utm_source=github_flowsom_repo_read_me_zh&utm_medium=flowsom_repo_readme&utm_campaign=read_me))
+
+# Installation
+Just use [pip](https://pypi.org/project/FlowSom/)
+    
+    pip install FlowSom
+  
+Or download this repository to a directory of your choice and then run:
+
+    pip install -r requirements.txt
+    
+    
+How to use it
+------------------
+<dl>
+  <dt>Read Files</dt>
+  <dd>In order to use FlowSOM you need your data saved as a .csv file or a .fcs file.</dd>
+</dl>
+
+```python
+file = r'flowmetry.fcs'
+```
+<dl>
+  <dd>Or</dd>
+</dl>
+
+```python
+file = 'flowmetry.csv'
+```
+
+<dl>
+  <dt>Import Package</dt>
+    <dd>Then you need to import the package.</dd>
+    <dd>If you install the package via pip, then you should run</dd>
+</dl>
+
+```python
+from flowsom import flowsom
+```
+<dl>
+    <dd>If you download the repository, you should run</dd>
+</dl>
+
+```python
+from flowsom import *
+```
+<dl>
+    <dt>Play Around</dt>
+    <dd>Then you can run FlowSOM just as follows:</dd>
+</dl>
+
+```python
+fsom = flowsom(file) # read the data
+fsom.som_mapping(50, 50, 31, sigma=2.5, 
+                 learning_rate=0.1, batch_size=100)  # trains SOM with 100 iterations
+fsom.meta_clustering(AgglomerativeClustering, min_n=40, 
+                     max_n=45, 
+                     iter_n=3) # train the meta clustering for cluster in range(40,45)       
+```
+
+### Use the trained output
+
+After the training, you will be able to:
+
+* Get the weights of SOM with method `fsom.map_som`
+* Get the best number of clustering with method `fsom.bestk`
+* Get the prediction dataframe with method `fsom.df` and `fsom.tf_df`
+* Visualize the final clustering outcome with method`fsom.vis`
+
+Examples
+-------------------------
+The demo code could be found [here](https://github.com/Hatchin/FlowSOM/blob/master/demo/demo.ipynb).
+
+The distance map of SOM trained from a sample flow cytometry [data](https://github.com/Hatchin/FlowSOM/blob/master/demo/flowmetry_transformed.csv):
+
+<img src="https://github.com/Hatchin/FlowSOM/blob/master/img/som.png" alt="Flow example">
+
+The visualization example after meta-clustering using Minimal Spanning Tree (MST):
+<img src="https://github.com/Hatchin/FlowSOM/blob/master/img/mst.png" alt="MST example">
+
+FlowSOM Algorithm
+--------------------------
+
+FlowSOM analyzes flow or mass cytometry data using a self-Organizing Map (SOM). Using a two-level clustering and star charts, FlowSOM helps to obtain a clear overview of how all markers are behaving on all cells, and to detect subsets that might be missed otherwise. 
+
+The algorithm consists of four steps: 
+- reading the data
+- building a Self-Organizing Map
+- building a minimal spanning tree
+- computing a meta-clustering
+    
+### Self-Organizing Map
+SOM is a type of unsupervised Artificial Neural Network able to convert complex, nonlinear statistical relationships between high-dimensional data items into simple geometric relationships on a low-dimensional display. [Introduction](https://heartbeat.fritz.ai/introduction-to-self-organizing-maps-soms-98e88b568f5d)
+
+### Minimum Spanning Tree
+
+A minimum spanning tree (MST) or minimum weight spanning tree is a subset of the edges of a connected, edge-weighted undirected graph that connects all the vertices together, without any cycles and with the minimum possible total edge weight.
+
+### Meta-clustering
+The meta-clustering technique conducted on the SOM is hierarchical consensus meta-clustering, which clusters the weights of trained SOM into different groups. 
+
+Acknowledge
+-----------------
+FlowSOM is built based on [FlowCytometryTools](https://github.com/eyurtsev/FlowCytometryTools), [MiniSom](https://github.com/JustGlowing/minisom) and [Consensus Clustering](https://github.com/ZigaSajovic/Consensus_Clustering).
+
+Update pypi: [source](https://stackoverflow.com/questions/52700692/a-guide-for-updating-packages-on-pypi)

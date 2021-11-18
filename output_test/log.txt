@@ -1,0 +1,9 @@
+2021-11-17 18:45:00,127 MainThread  INFO       Name of this analysis: /Users/simonepuccio/Documents/GitHub/Cytophenograph/Test_dataset2/markers_to_exclude.txt
+2021-11-17 18:45:00,127 MainThread  INFO       Input folder: /Users/simonepuccio/Documents/GitHub/Cytophenograph/Test_dataset2/sample/
+2021-11-17 18:45:00,127 MainThread  INFO       Output folder: /Users/simonepuccio/Documents/GitHub/Cytophenograph/output_test
+2021-11-17 18:45:00,127 MainThread  INFO       Info file: /Users/simonepuccio/Documents/GitHub/Cytophenograph/Test_dataset2/Info_file_bulk_Test.xlsx
+2021-11-17 18:45:00,127 MainThread  INFO       Phenograph K-coef: 300
+2021-11-17 18:45:00,127 MainThread  INFO       Marker list file: /Users/simonepuccio/Documents/GitHub/Cytophenograph/Test_dataset2/markers_to_exclude.txt
+2021-11-17 18:45:00,127 MainThread  INFO       Clustering tool option: Flowsom
+2021-11-17 18:51:51,704 MainThread  INFO       Directory FCSclusterFlowsom Created
+2021-11-17 18:51:52,117 MainThread  INFO       Directory FCSsampleFlowsom Created
