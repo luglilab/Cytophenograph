@@ -1,8 +1,0 @@
-,export_Specimen_001_NEU_2_WT_neutrophils_5000,export_Specimen_001_NEU_1_ACKR2KO_neutrophils_5000,export_Specimen_001_NEU_10_WT_LPS_neutrophils_5000,export_Specimen_001_NEU_4_ACKR2KO_LPS_neutrophils_5000
-1,1097,1309,1451,1519
-2,1,9,0,0
-3,602,524,547,922
-4,26,43,9,32
-5,1673,1559,172,1010
-6,547,468,34,229
-7,1054,1088,2787,1288
