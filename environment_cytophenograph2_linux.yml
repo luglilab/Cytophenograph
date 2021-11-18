@@ -138,4 +138,4 @@ dependencies:
     - python-igraph==0.9.4
     - scipy==1.4.1
     - texttable==1.6.3
-prefix: /home/spuccio/anaconda3/envs/cytophenograph3
+
