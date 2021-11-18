@@ -251,9 +251,9 @@ class Cytophenograph:
         self.new_head=[]
         self.new_head.append([column.split("::")[-1] for column in data])
         data.columns = self.new_head
-        data.diff().hist(color="k", alpha=0.5, bins=50, grid=False, xlabelsize=8,ylabelsize=8)
-        plt.tight_layout()
-        plt.savefig("/".join([self.output_folder, ".".join(["_".join([self.analysis_name]), "pdf"])]))
+        # data.diff().hist(color="k", alpha=0.5, bins=50, grid=False, xlabelsize=8,ylabelsize=8)
+        # plt.tight_layout()
+        # plt.savefig("/".join([self.output_folder, ".".join(["_".join([self.analysis_name]), "pdf"])]))
         p = parc.PARC(data.values, random_seed=42,
                       jac_std_global='median',
                       small_pop = 100,
