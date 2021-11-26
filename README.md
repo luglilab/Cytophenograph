@@ -71,7 +71,7 @@ Important:  Microsoft Visual C++ 14.0 or greater is required. Get it with "Micro
 
 **Strategy 1 : Execute the following command** 
 ```python
-conda create --name Cytophenograph3 pip python=3.6.1 scanpy=1.7.2 xlrd=1.2.0  hnswlib leidenalg=0.7.0 scipy=1.4.1  
+conda create --name Cytophenograph3 pip python=3.6.1 scanpy 
 conda activate Cytophenograph3
 pip install leidenalg==0.7.0
 pip install hnswlib
