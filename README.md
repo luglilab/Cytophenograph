@@ -29,7 +29,7 @@ git clone https://github.com/luglilab/Cytophenograph
 
 
 ### Installation on LINUX machine
-Tested on computer with ios 10.15.7 
+Tested on Debian GNU/Linux server
 
 **Strategy 1 : Use YML file to clone environment** 
 ```python
