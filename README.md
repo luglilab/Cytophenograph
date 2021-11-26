@@ -65,6 +65,21 @@ pip install phenograph
 pip install -e ./Cytophenograph/FlowSOM_LugliLab
 ```
 
+### Installation on WINDOWS machine
+Tested on Windows10
+Important:  Microsoft Visual C++ 14.0 or greater is required. Get it with "Microsoft C++ Build Tools": https://visualstudio.microsoft.com/visual-cpp-build-tools/
+
+**Strategy 1 : Execute the following command** 
+```python
+conda create --name Cytophenograph3 pip python=3.6.1 scanpy=1.7.2 xlrd=1.2.0  hnswlib leidenalg=0.7.0 scipy=1.4.1  
+conda activate Cytophenograph3
+pip install leidenalg==0.7.0
+pip install hnswlib
+pip install parc
+pip install -U PhenoGraph
+pip install -e ./Cytophenograph/FlowSOM_LugliLab
+conda install -c anaconda xlrd
+```
 
 ###  Move on Phenograph folder
 
