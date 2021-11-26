@@ -30,6 +30,7 @@ git clone https://github.com/luglilab/Cytophenograph
 
 ### Installation on LINUX machine
 Tested on computer with ios 10.15.7 
+
 **Strategy 1 : Use YML file to clone environment** 
 ```python
 conda env create -n cytophenograph3 -f ./Cytophenograph/environment_cytophenograph3_linux.yml
