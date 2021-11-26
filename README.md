@@ -34,10 +34,19 @@ for installation on linux machine execute this command:
 conda env create -n cytophenograph2 -f ./Cytophenograph/environment_cytophenograph2_linux.yml
 conda activate cytophenograph2
 ```
-for installation on mac machine execute this command:
+for installation on MAC machine execute this command:
+### Strategy 1 : Use YML file to clone environment 
 ```python
-conda env create -n cytophenograph2 -f ./Cytophenograph/environment_cytophenograph2_mac.yml
-conda activate cytophenograph2
+conda env create -n cytophenograph3 -f ./Cytophenograph/environment_cytophenograph3_mac.yml
+conda activate cytophenograph3
+```
+### Strategy 2 : Execute the following command 
+```python
+conda create --name Cytophenograph3 pip python=3.6.1 scanpy=1.7.2 xlrd=1.2.0  hnswlib leidenalg=0.7.0 scipy=1.4.1  
+conda activate Cytophenograph3
+pip install parc
+pip install phenograph
+pip install -e ./Cytophenograph/FlowSOM_LugliLab
 ```
 
 Install Phenograph
