@@ -56,6 +56,7 @@ Tested on computer with ios 10.15.7
 ```python
 conda env create -n cytophenograph3 -f ./Cytophenograph/environment_cytophenograph3_mac.yml
 conda activate cytophenograph3
+pip install -e ./Cytophenograph/FlowSOM_LugliLab
 ```
 ### Strategy 2 : Execute the following command 
 ```python
