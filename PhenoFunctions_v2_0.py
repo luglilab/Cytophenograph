@@ -14,6 +14,7 @@ from sklearn import preprocessing
 import matplotlib.pyplot as plt
 from flowsom import flowsom as flowsom
 import tempfile
+import scanpy.external as sce
 tmp = tempfile.NamedTemporaryFile()
 
 class Cytophenograph:
@@ -184,7 +185,7 @@ class Cytophenograph:
                 sys.exit(1)
         return marker_array
 
-    def runclustering(self,markertoexclude, adata):
+    def runphenograph(self, markertoexclude, adata):
         """
         Function for execution of phenograph analysis
         :param markertoexclude:
@@ -193,40 +194,23 @@ class Cytophenograph:
         """
         marker = adata.var_names.to_list()
         markertoinclude = [i for i in marker if i not in markertoexclude]
-        data = adata[:, markertoinclude].to_df()
         self.log.info("Markers used for Phenograph clustering:")
-        self.log.info(data.columns)
-        if (self.scale == True):
-            min_max_scaler = preprocessing.MinMaxScaler((1, 100))
-            x_scaled = min_max_scaler.fit_transform(data.values)
-            data = pd.DataFrame(x_scaled,
-            columns=data.columns)
-        self.new_head=[]
-        self.new_head.append([column.split("::")[-1] for column in data])
-        data.columns = self.new_head
-        # data.diff().hist(color="k", alpha=0.5, bins=50, grid=False, xlabelsize=8,ylabelsize=8)
-        # plt.tight_layout()
-        # plt.savefig("/".join([self.output_folder, ".".join(["_".join([self.analysis_name]), "pdf"])]))
-        communities, graph, Q = pg.cluster(data.values, k=int(self.k_coef),
-                                           directed=False,
-        prune=False,min_cluster_size=1,n_jobs=int(self.thread))
-        # create dataframe with Phenograph output
-        self.dfPheno = pd.DataFrame(communities)
-        # shift of one unit the name of cluster
-        self.dfPheno["Phenograph"] = self.dfPheno[0] + 1
-        # remove first column
-        self.dfPheno = self.dfPheno.drop(columns=[0], axis=1)
-        self.dfPheno.set_index(adata.obs.index, inplace=True)
-        adata.obs['cluster'] = self.dfPheno
-        adata.obs['Phenograph_cluster'] = self.dfPheno
+        tmp = adata[:, markertoinclude]
+        self.log.info(tmp.var_names)
+        sc.tl.pca(adata, random_state=45, svd_solver="auto")
+        sce.tl.phenograph(tmp, clustering_algo="leiden", k=int(self.k_coef), seed=45,
+                          min_cluster_size=1, nn_method="brute")
+        tmp.obs['pheno_leiden'] = tmp.obs['pheno_leiden'].astype(int) + 1
+        adata.obs['cluster'] = tmp.obs['pheno_leiden']
+        adata.obs['Phenograph_cluster'] = tmp.obs['pheno_leiden']
         reducer = umap.UMAP(random_state=42, n_neighbors=10, min_dist=0.01)
-        embedding = reducer.fit_transform(data.values)
+        embedding = reducer.fit_transform(tmp.X)
         adata.obsm['X_umap'] = embedding
-        self.tmp_df = self.tmp_df.astype(int)
+        self.tmp_df = pd.DataFrame(adata.X)
         self.tmp_df['UMAP_1'] = embedding[:, 0]
         self.tmp_df['UMAP_2'] = embedding[:, 1]
-        self.tmp_df['Cluster_Phenograph'] = self.dfPheno
-        self.tmp_df.to_csv("/".join([self.output_folder, ".".join(["_".join([self.analysis_name]), "csv"])]),
+        self.tmp_df['Cluster_Phenograph'] = tmp.obs['pheno_leiden']
+        self.tmp_df.to_csv("/".join([self.output_folder, "_mergedCells.".join(["_".join([self.analysis_name]), "csv"])]),
                            header=True, index=False)
         return adata
 

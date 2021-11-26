@@ -38,7 +38,7 @@ if __name__ == '__main__':
     DictInfo["markertoexclude"] = run.checkmarkers(DictInfo["adata_conc"])
     if options.clustering == "Phenograph":
         print("Clustering tool selected is: Phenograph")
-        DictInfo["phenograph_adata"] = run.runclustering(DictInfo["markertoexclude"], DictInfo["adata_conc"])
+        DictInfo["phenograph_adata"] = run.runphenograph(DictInfo["markertoexclude"], DictInfo["adata_conc"])
         run.groupbycluster(DictInfo["phenograph_adata"],"Phenograph")
         run.groupbysample(DictInfo["phenograph_adata"],"Phenograph")
         run.exporting(DictInfo["phenograph_adata"],options.clustering)
