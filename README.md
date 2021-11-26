@@ -50,13 +50,6 @@ pip install phenograph
 pip install -e ./Cytophenograph/FlowSOM_LugliLab
 ```
 
-Install Phenograph
-
-
-```python
-pip install -e ./Cytophenograph/Phenograph_LugliLab 
-pip install -e ./Cytophenograph/FlowSOM_LugliLab 
-```
 
 Move on Phenograph folder
 
