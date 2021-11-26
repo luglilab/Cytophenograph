@@ -43,11 +43,14 @@ conda activate cytophenograph3
 ```
 ### Strategy 2 : Execute the following command 
 ```python
-conda create --name Cytophenograph3 pip python=3.6.1 scanpy=1.7.2 xlrd=1.2.0  hnswlib leidenalg=0.7.0 scipy=1.4.1  
+conda create --name Cytophenograph3 pip python=3.6.1 scanpy 
 conda activate Cytophenograph3
+pip install leidenalg==0.7.0
+pip install hnswlib
 pip install parc
-pip install phenograph
+pip install -U PhenoGraph
 pip install -e ./Cytophenograph/FlowSOM_LugliLab
+conda install -c anaconda xlrd
 ```
 
 ### Installation on MAC machine
