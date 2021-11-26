@@ -30,12 +30,12 @@ git clone https://github.com/luglilab/Cytophenograph
 
 ### Installation on LINUX machine
 Tested on computer with ios 10.15.7 
-### Strategy 1 : Use YML file to clone environment 
+**Strategy 1 : Use YML file to clone environment** 
 ```python
 conda env create -n cytophenograph3 -f ./Cytophenograph/environment_cytophenograph3_linux.yml
 conda activate cytophenograph3
 ```
-### Strategy 2 : Execute the following command 
+**Strategy 2 : Execute the following command** 
 ```python
 conda create --name Cytophenograph3 pip python=3.6.1 scanpy 
 conda activate Cytophenograph3
@@ -49,13 +49,13 @@ conda install -c anaconda xlrd
 
 ### Installation on MAC machine
 Tested on computer with ios 10.15.7 
-### Strategy 1 : Use YML file to clone environment 
+**Strategy 1 : Use YML file to clone environment** 
 ```python
 conda env create -n cytophenograph3 -f ./Cytophenograph/environment_cytophenograph3_mac.yml
 conda activate cytophenograph3
 pip install -e ./Cytophenograph/FlowSOM_LugliLab
 ```
-### Strategy 2 : Execute the following command 
+**Strategy 2 : Execute the following command** 
 ```python
 conda create --name Cytophenograph3 pip python=3.6.1 scanpy=1.7.2 xlrd=1.2.0  hnswlib leidenalg=0.7.0 scipy=1.4.1  
 conda activate Cytophenograph3
