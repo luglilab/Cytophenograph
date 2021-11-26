@@ -34,7 +34,8 @@ for installation on linux machine execute this command:
 conda env create -n cytophenograph2 -f ./Cytophenograph/environment_cytophenograph2_linux.yml
 conda activate cytophenograph2
 ```
-for installation on MAC machine execute this command:
+### installation on MAC machine
+Tested on computer with ios 10.15.7 
 ### Strategy 1 : Use YML file to clone environment 
 ```python
 conda env create -n cytophenograph3 -f ./Cytophenograph/environment_cytophenograph3_mac.yml
