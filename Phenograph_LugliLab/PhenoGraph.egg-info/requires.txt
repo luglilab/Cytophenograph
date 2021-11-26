@@ -1,6 +1,0 @@
-leidenalg>=0.8.2
-setuptools>=18.0.1
-numpy>=1.12
-scipy>=1.5.1
-scikit_learn>=0.17
-psutil>4
