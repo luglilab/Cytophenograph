@@ -65,7 +65,7 @@ pip install -e ./Cytophenograph/FlowSOM_LugliLab
 ```
 
 
-Move on Phenograph folder
+###  Move on Phenograph folder
 
 
 
@@ -74,7 +74,7 @@ python ./Cytophenograph/cytophenograph.v3_0.py --help
 ```
 
 
-Test Execution 
+###  Test Execution 
 ```python
 abs_path=$(pwd)
 mkdir -p $abs_path/Cytophenograph/output_test
