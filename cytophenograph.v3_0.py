@@ -1,6 +1,6 @@
 from version import __version__
 import optparse
-from PhenoFunctions_v2_0 import *
+from PhenoFunctions_v3_0 import *
 
 parser = optparse.OptionParser(usage='python ./Cytophenograph/cytophenograph.v2_0.py -i $abs_path/Cytophenograph/Test_dataset/CD8_Panel_II_channelvalues_GA_downSampled/ -o $abs_path/Cytophenograph/output_test -k 300 -m $abs_path/Cytophenograph/Test_dataset/CD8_bulk_markers_to_exclude.txt -n Test -t 10 -p $abs_path/Cytophenograph/Test_dataset/Info_file_bulk_Test.xlsx -c Parc', version='2.0')
 parser.add_option('-i', action="store", dest="input_folder", help='Absolute path of folder with CSV files.')
