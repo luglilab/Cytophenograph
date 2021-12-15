@@ -94,6 +94,7 @@ class Cytophenograph:
         :param csv_list:
         :return:
         """
+        self.log.info("Part1: Files concatenation")
         # create empy list for save several df
         pandas_df_list = []
         # create list with anndata object
@@ -192,6 +193,7 @@ class Cytophenograph:
         :param adata:
         :return:
         """
+        self.log.info("Part2: Phenograph Clustering")
         marker = adata.var_names.to_list()
         markertoinclude = [i for i in marker if i not in markertoexclude]
         self.log.info("Markers used for Phenograph clustering:")
@@ -203,6 +205,7 @@ class Cytophenograph:
         tmp.obs['pheno_leiden'] = tmp.obs['pheno_leiden'].astype(int) + 1
         adata.obs['cluster'] = tmp.obs['pheno_leiden']
         adata.obs['Phenograph_cluster'] = tmp.obs['pheno_leiden']
+        self.log.info("Part3: UMAP (Uniform Manifold Approximation and Projection) generation")
         reducer = umap.UMAP(random_state=42, n_neighbors=10, min_dist=0.01)
         embedding = reducer.fit_transform(tmp.X)
         adata.obsm['X_umap'] = embedding
@@ -222,6 +225,7 @@ class Cytophenograph:
         :param thread:
         :return:
         """
+        self.log.info("Part2: PARC Clustering")
         marker = adata.var_names.to_list()
         markertoinclude = [i for i in marker if i not in markertoexclude]
         data = adata[:, markertoinclude].to_df()
@@ -245,6 +249,7 @@ class Cytophenograph:
         p.run_PARC()
         adata.obs['cluster'] = [str(i) for i in p.labels]
         adata.obs['Parc_cluster'] = [str(i) for i in p.labels]
+        self.log.info("Part3: UMAP (Uniform Manifold Approximation and Projection) generation")
         reducer=umap.UMAP(random_state=42,
                             n_neighbors=10,
                             min_dist=0.01)
@@ -266,6 +271,7 @@ class Cytophenograph:
         :param markertoexclude:
         :return:
         """
+        self.log.info("Part2: Flowsom Clustering")
         adata.to_df().to_csv(tmp.name, header=True, index=False)
         tt = flowsom(tmp.name, if_fcs=False,if_drop=True,drop_col=markertoexclude)
         sample_df = tt.df
@@ -296,6 +302,7 @@ class Cytophenograph:
         adata.obs['cluster'] = adata.obs['cluster'].map(res_dct)
         adata.obs['cluster'] = adata.obs['cluster'] + 1
         adata.obs['Flowsom_cluster'] = adata.obs['cluster']
+        self.log.info("Part3: UMAP (Uniform Manifold Approximation and Projection) generation")
         reducer = umap.UMAP(random_state=42,
                              n_neighbors=10,
                              min_dist=0.01)
@@ -408,6 +415,7 @@ class Cytophenograph:
         """
         Export to h5ad file. 
         """
+        self.log.info("Part4: Output Generation")
         old_names = adata.var_names
         new_names = []
         for _ in range(len(old_names)):
