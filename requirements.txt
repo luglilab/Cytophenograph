@@ -1,4 +1,3 @@
-numpy~=1.19.5
 flowcytometrytools~=0.5.1
 networkx~=2.5
 pandas~=1.1.5
