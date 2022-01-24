@@ -348,19 +348,22 @@ class Cytophenograph:
         self.adata_subset = self.adata[:, self.markertoinclude].copy()
         self.adata_subset.layers['scaled'] = sc.pp.scale(self.adata_subset, max_value=6,
                                                          zero_center=True, copy=True).X
-        self.adata.to_df().to_csv(tmp.name, header=True, index=False)
+        self.adata_subset.X = self.adata_subset.layers['scaled']
+        self.adata_subset.to_df().to_csv(tmp.name, header=True, index=False)
         tt = flowsom(tmp.name, if_fcs=False,if_drop=True,
-                     drop_col=self.markertoinclude)
+                     drop_col=[])
         sample_df = tt.df
-        tt.som_mapping(50, 50, tt.df.shape[1],
-                       sigma =2.5,
-                       lr=0.1,
+        tt.som_mapping(10,
+                       10, tt.df.shape[1],
+                       sigma=2.5,
+                       lr=0.05,
                        batch_size=100,
                        neighborhood='gaussian',
                        if_fcs=False,
-                       seed=10)
+                       seed=42)
         from sklearn.cluster import AgglomerativeClustering
-        tt.meta_clustering(AgglomerativeClustering,
+        from sklearn.cluster import KMeans
+        tt.meta_clustering(KMeans,
                            # cluster_class: e.g. KMeans, a cluster class, like "from sklearn.cluster import KMeans"
                            5,  # min_n: e.g. 10, the min proposed number of clusters
                            31,  # max_n: e.g. 31, the max proposed number of clusters
@@ -370,25 +373,22 @@ class Cytophenograph:
                            verbose=False  # verbose: e.g. False, whether print out the clustering process
                            )
         tt.labeling()
-        # output_df = tt.df  # new column added: category
         output_tf_df = tt.tf_df  # new column added: category
         output_tf_df.set_index(self.adata.obs.index, inplace=True)
-        TMP = output_tf_df['category'].astype(int).sort_values().unique()
-        res_dct = {TMP[i]: i for i in range(len(TMP))}
-        output_tf_df['category'] = output_tf_df['category'].map(res_dct)
-        self.adata_subset.obs['pheno_leiden'] = output_tf_df['category'].astype(int) + 1
-        self.adata_subset.obs['pheno_leiden'] = self.adata_subset.obs['pheno_leiden'].astype(int) + 1
-        self.adata_subset.obs['pheno_leiden'] = self.adata_subset.obs['pheno_leiden'].astype('category')
+        output_tf_df['category'] = output_tf_df['category']+1
+        self.adata_subset.obs['pheno_leiden'] = output_tf_df['category'].astype('category')
+        self.adata_subset.obs['pheno_leiden'] = self.adata_subset.obs['pheno_leiden']
         self.adata.obs['cluster'] = self.adata_subset.obs['pheno_leiden']
-        self.adata.obs['Cluster_Flowsom'] = self.adata_subset.obs['pheno_leiden'].astype('category')
-        self.adata_subset.X = self.adata_subset.layers['scaled']
+        self.adata.obs['Cluster_Flowsom'] = self.adata_subset.obs['pheno_leiden']
+        self.embedding = self.runumap()
+        self.adata.obsm['X_umap'] = self.embedding
+        self.adata_subset.obsm['X_umap'] = self.embedding
         self.embedding = self.runumap()
         self.adata.obsm['X_umap'] = self.embedding
         self.adata_subset.obsm['X_umap'] = self.embedding
         self.tmp_df = pd.DataFrame(self.adata.X, columns=self.adata.var_names)
         self.tmp_df['UMAP_1'] = self.embedding[:, 0]
         self.tmp_df['UMAP_2'] = self.embedding[:, 1]
-        self.tmp_df['Cluster_Flowsom'] = self.adata_subset.obs['pheno_leiden']
         self.plot_umap()
         self.matrixplot()
         self.tmp_df.to_csv(
@@ -499,7 +499,7 @@ class Cytophenograph:
         self.adata.var = pd.DataFrame(old_names, new_names)
         del self.adata.var[0]
         self.adata.var['original_names'] = old_names
-        if self.tool == "Phenograph" or self.tool == "Parc":
+        if self.tool != "Flowsom":
             self.adata.obs[self.tool+"_"+str(self.k_coef)] = self.adata.obs['cluster'].astype("str")
             del self.adata.obs['cluster']
             del self.adata.obs[self.tool+"_"+str(self.k_coef)]
