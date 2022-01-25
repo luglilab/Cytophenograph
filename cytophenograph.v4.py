@@ -17,11 +17,7 @@ options, args = parser.parse_args()
 
 
 if __name__ == '__main__':
-    print("Script name: cytophenograph" )
-    print("Script version:",__version__)
-    print("Start")
     DictInfo = dict()
-
     run = Cytophenograph(info_file=options.pheno, input_folder=options.input_folder,
                          output_folder=options.output_folder,
                          k_coef=options.kmeancoef,
@@ -37,15 +33,12 @@ if __name__ == '__main__':
     DictInfo["markertoexclude"] = run.checkmarkers()
     DictInfo["markertoinclude"] = run.splitmarker()
     if options.clustering == "Phenograph":
-        print("Clustering tool selected is: Phenograph")
         DictInfo["phenograph_adata"] = run.runphenograph()
     elif options.clustering == "Parc":
-        print("Clustering tool selected is: Parc")
         DictInfo["parc_adata"] = run.runparc()
     elif options.clustering == "Flowsom":
-        print("Clustering tool selected is: Flowsom")
         DictInfo["flowsom_adata"] = run.runflowsom()
-    # run.groupbycluster()
-    # run.groupbysample()
-    # run.exporting()
+    run.groupbycluster()
+    run.groupbysample()
+    run.exporting()
     print("End")

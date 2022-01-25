@@ -11,6 +11,7 @@ import umap
 import logging
 from flowsom import flowsom as flowsom
 import tempfile
+import matplotlib.pyplot as plt
 tmp = tempfile.NamedTemporaryFile()
 sc.settings.autoshow = False
 sc.settings.set_figure_params(dpi=300, facecolor='white',
@@ -24,11 +25,14 @@ class Cytophenograph:
         self.info_file = info_file
         self.input_folder = input_folder
         self.output_folder = output_folder
-        self.k_coef = k_coef
+        self.tool = tool
+        if self.tool != "Flowsom":
+            self.k_coef = k_coef
+        else:
+            self.k_coef = None
         self.marker_list = marker_list
         self.analysis_name = analysis_name
         self.thread = thread
-        self.tool = tool
         self.tmp_df = pd.DataFrame()
         self.adata = None
         self.adata_subset = None
@@ -38,6 +42,7 @@ class Cytophenograph:
         self.markertoinclude = None
         self.marker_array = None
         self.anndata_list = []
+        self.outfig = None
         self.log = logging.getLogger()
         self.log.setLevel(logging.INFO)
         format = logging.Formatter("%(asctime)s %(threadName)-11s %(levelname)-10s %(message)s")
@@ -49,6 +54,9 @@ class Cytophenograph:
         fh = logging.FileHandler("/".join([self.output_folder,"log.txt"]), "w")
         fh.setFormatter(format)
         self.log.addHandler(fh)
+        self.log.info("Start Analysis")
+        self.log.info("Script version: 4.0")
+
         self.log.info("Name of this analysis: {}".format(marker_list))
         self.log.info("Input folder: {}".format(input_folder))
         self.log.info("Output folder: {}".format(output_folder))
@@ -223,18 +231,19 @@ class Cytophenograph:
         Function per generation of pdf files with umap plot
         """
         self.createdir("/".join([self.output_folder, "".join(["Figures",self.tool])]))
-        sc.settings.figdir = "/".join([self.output_folder, "".join(["Figures", self.tool])])
+        self.outfig = "/".join([self.output_folder, "".join(["Figures",self.tool])])
+        sc.settings.figdir = self.outfig
         if len(self.adata_subset.obs["pheno_leiden"].unique()) < 10:
             self.palette = "tab10"
         else:
             self.palette = "tab20"
         sc.pl.umap(self.adata_subset, color="pheno_leiden",
                    palette=self.palette, legend_fontoutline=2, show=False, add_outline=False, frameon=False,
-                   title="UMAP Plot",
+                   title="UMAP Plot",return_fig=False,
                    s=50, save=".".join(["".join([str(self.tool), "_cluster"]), "pdf"]))
         sc.pl.umap(self.adata_subset, color="pheno_leiden",
                    palette=self.palette, legend_fontoutline=2, show=False, add_outline=False, frameon=False,
-                   legend_loc='on data', title="UMAP Plot",
+                   legend_loc='on data', title="UMAP Plot",return_fig=False,
                    s=50, save="_legend_on_data.".join(["".join([str(self.tool), "_cluster"]), "pdf"]))
         sc.pl.correlation_matrix(self.adata_subset, "pheno_leiden", show=False,
                                  save=".".join([self.tool, "pdf"]))
@@ -252,14 +261,43 @@ class Cytophenograph:
         """
         sc.pl.matrixplot(self.adata_subset, list(self.adata_subset.var_names), "pheno_leiden",
                          dendrogram=True, vmin=-2, vmax=2, cmap='RdBu_r', layer="scaled",
-                         show=False, swap_axes=False,return_fig=False,
+                         show=False, swap_axes=False, return_fig=False,
                          save=".".join(["matrixplot_mean_z_score", "pdf"]))
         sc.pl.matrixplot(self.adata_subset, list(self.adata_subset.var_names), "pheno_leiden",
                          dendrogram=True, cmap='Blues', standard_scale='var',
                          colorbar_title='column scaled\nexpression', layer="scaled",
-                         swap_axes=False,return_fig=False,
+                         swap_axes=False, return_fig=False,
                          show=False,
                          save=".".join(["matrixplot_column_scaled_expression", "pdf"]))
+
+    def plot_frequency(self):
+        """
+
+        """
+        fig, (ax1) = plt.subplots(1, 1, figsize=(17 / 2.54, 17 / 2.54))
+        ax1 = self.adata_subset.obs.groupby("pheno_leiden")["Sample"].value_counts(normalize=True).unstack().plot.barh(stacked=True,
+                                                                                                           legend=False,
+                                                                                                           ax=ax1,
+                                                                                                           colormap='Paired_r')
+        ax1.set_xlabel("% Frequency")
+        ax1.set_ylabel("Cluster")
+        ax1.grid(False)
+        ax1.legend(bbox_to_anchor=(1.2, 1.0))
+        fig.savefig("/".join([self.outfig, "ClusterFrequencyNormalized.pdf"]),
+                    dpi=100, bbox_inches='tight',
+                    format='pdf')
+        fig, (ax2) = plt.subplots(1, 1, figsize=(17 / 2.54, 17 / 2.54))
+        ax2 = self.adata_subset.obs.groupby("pheno_leiden")["Sample"].value_counts(normalize=False).unstack().plot.barh(stacked=True,
+                                                                                                           legend=False,
+                                                                                                           ax=ax2,
+                                                                                                           colormap='Paired_r')
+        ax2.set_xlabel("Frequency")
+        ax2.set_ylabel("Cluster")
+        ax2.grid(False)
+        ax2.legend(bbox_to_anchor=(1.2, 1.0))
+        fig.savefig("/".join([self.outfig, "ClusterFrequencyNotNormalized.pdf"]),
+                    dpi=fig.dpi, bbox_inches='tight',
+                    format='pdf')
 
     def runphenograph(self):
         """
@@ -293,6 +331,7 @@ class Cytophenograph:
         self.tmp_df['UMAP_2'] = self.embedding[:, 1]
         self.tmp_df['Cluster_Phenograph'] = self.adata_subset.obs['pheno_leiden']
         self.plot_umap()
+        self.plot_frequency()
         self.matrixplot()
         self.tmp_df.to_csv("/".join([self.output_folder, "_ConcatenatedCells.".join(["_".join([self.analysis_name]), "csv"])]),
                            header=True, index=False)
@@ -330,6 +369,7 @@ class Cytophenograph:
         self.tmp_df['UMAP_2'] = self.embedding[:, 1]
         self.tmp_df['Cluster_Parc'] = self.adata_subset.obs['pheno_leiden']
         self.plot_umap()
+        self.plot_frequency()
         self.matrixplot()
         self.tmp_df.to_csv("/".join([self.output_folder, "_ConcatenatedCells.".join(["_".join([self.analysis_name]), "csv"])]),
                            header=True, index=False)
@@ -361,7 +401,6 @@ class Cytophenograph:
                        neighborhood='gaussian',
                        if_fcs=False,
                        seed=42)
-        from sklearn.cluster import AgglomerativeClustering
         from sklearn.cluster import KMeans
         tt.meta_clustering(KMeans,
                            # cluster_class: e.g. KMeans, a cluster class, like "from sklearn.cluster import KMeans"
@@ -390,6 +429,7 @@ class Cytophenograph:
         self.tmp_df['UMAP_1'] = self.embedding[:, 0]
         self.tmp_df['UMAP_2'] = self.embedding[:, 1]
         self.plot_umap()
+        self.plot_frequency()
         self.matrixplot()
         self.tmp_df.to_csv(
             "/".join([self.output_folder, "_ConcatenatedCells.".join(["_".join([self.analysis_name]), "csv"])]),
@@ -455,7 +495,6 @@ class Cytophenograph:
         unique_filename = self.adata.obs['Sample'].unique()
         # get unique number of cluster
         unique_Phenograph = self.adata.obs['cluster'].unique()
-        #
         dfCounts = pd.DataFrame(index=range(min(unique_Phenograph), max(unique_Phenograph) + 1))
         # generate Tot_percentage file
         for i in range(len(unique_filename)):
@@ -508,6 +547,7 @@ class Cytophenograph:
             self.adata.write("/".join([self.output_folder, ".".join(["_".join([self.analysis_name, self.k_coef]), "h5ad"])]))
         elif self.tool == "Flowsom":
             del self.adata.obs['cluster']
-            self.adata.X = sc.pp.scale(self.adata, max_value=6,zero_center=True, copy=True).X
+            self.adata.X = sc.pp.scale(self.adata, max_value=6,
+                                       zero_center=True, copy=True).X
             self.adata.write("/".join([self.output_folder, ".".join(["_".join([self.analysis_name]), "h5ad"])]))
 
