@@ -31,7 +31,8 @@ class Cytophenograph:
         else:
             self.k_coef = None
         self.marker_list = marker_list
-        self.analysis_name = analysis_name
+        # TO DO check analysis name
+        self.analysis_name = ''.join(e for e in analysis_name if e.isalnum())
         self.thread = thread
         self.tmp_df = pd.DataFrame()
         self.adata = None
@@ -43,6 +44,7 @@ class Cytophenograph:
         self.marker_array = None
         self.anndata_list = []
         self.outfig = None
+        self.fileformat = "svg"
         self.log = logging.getLogger()
         self.log.setLevel(logging.INFO)
         format = logging.Formatter("%(asctime)s %(threadName)-11s %(levelname)-10s %(message)s")
@@ -51,7 +53,8 @@ class Cytophenograph:
         ch.setFormatter(format)
         self.log.addHandler(ch)
         #
-        fh = logging.FileHandler("/".join([self.output_folder,"log.txt"]), "w")
+        fh = logging.FileHandler("/".join([self.output_folder,
+                                           "log.txt"]), "w")
         fh.setFormatter(format)
         self.log.addHandler(fh)
         self.log.info("Start Analysis")
@@ -240,18 +243,18 @@ class Cytophenograph:
         sc.pl.umap(self.adata_subset, color="pheno_leiden",
                    palette=self.palette, legend_fontoutline=2, show=False, add_outline=False, frameon=False,
                    title="UMAP Plot",return_fig=False,
-                   s=50, save=".".join(["".join([str(self.tool), "_cluster"]), "pdf"]))
+                   s=50, save=".".join(["".join([str(self.tool), "_cluster"]), self.fileformat]))
         sc.pl.umap(self.adata_subset, color="pheno_leiden",
                    palette=self.palette, legend_fontoutline=2, show=False, add_outline=False, frameon=False,
                    legend_loc='on data', title="UMAP Plot",return_fig=False,
-                   s=50, save="_legend_on_data.".join(["".join([str(self.tool), "_cluster"]), "pdf"]))
+                   s=50, save="_legend_on_data.".join(["".join([str(self.tool), "_cluster"]), self.fileformat]))
         sc.pl.correlation_matrix(self.adata_subset, "pheno_leiden", show=False,
-                                 save=".".join([self.tool, "pdf"]))
+                                 save=".".join([self.tool, self.fileformat]))
         for _ in list(self.adata_subset.var_names.unique()):
             sc.pl.umap(self.adata_subset, color=_, show=False, layer="scaled",
                        legend_fontoutline=1, na_in_legend=False, s=30,
                        title=_, palette='Viridis', groups=[_],
-                       save=".".join([''.join(e for e in _ if e.isalnum()), "pdf"])
+                       save=".".join([''.join(e for e in _ if e.isalnum()), self.fileformat])
                        )
 
     def matrixplot(self):
@@ -262,13 +265,13 @@ class Cytophenograph:
         sc.pl.matrixplot(self.adata_subset, list(self.adata_subset.var_names), "pheno_leiden",
                          dendrogram=True, vmin=-2, vmax=2, cmap='RdBu_r', layer="scaled",
                          show=False, swap_axes=False, return_fig=False,
-                         save=".".join(["matrixplot_mean_z_score", "pdf"]))
+                         save=".".join(["matrixplot_mean_z_score", self.fileformat]))
         sc.pl.matrixplot(self.adata_subset, list(self.adata_subset.var_names), "pheno_leiden",
                          dendrogram=True, cmap='Blues', standard_scale='var',
                          colorbar_title='column scaled\nexpression', layer="scaled",
                          swap_axes=False, return_fig=False,
                          show=False,
-                         save=".".join(["matrixplot_column_scaled_expression", "pdf"]))
+                         save=".".join(["matrixplot_column_scaled_expression", self.fileformat]))
 
     def plot_frequency(self):
         """
@@ -283,9 +286,13 @@ class Cytophenograph:
         ax1.set_ylabel("Cluster")
         ax1.grid(False)
         ax1.legend(bbox_to_anchor=(1.2, 1.0))
-        fig.savefig("/".join([self.outfig, "ClusterFrequencyNormalized.pdf"]),
-                    dpi=100, bbox_inches='tight',
-                    format='pdf')
+        if self.fileformat == "pdf":
+            fig.savefig("/".join([self.outfig, "ClusterFrequencyNormalized.pdf"]),
+                        dpi=100, bbox_inches='tight',
+                        format=self.fileformat)
+        else:
+            fig.savefig("/".join([self.outfig, "ClusterFrequencyNormalized.svg"]),
+                        dpi=fig.dpi, bbox_inches='tight',format=self.fileformat)
         fig, (ax2) = plt.subplots(1, 1, figsize=(17 / 2.54, 17 / 2.54))
         ax2 = self.adata_subset.obs.groupby("pheno_leiden")["Sample"].value_counts(normalize=False).unstack().plot.barh(stacked=True,
                                                                                                            legend=False,
@@ -295,9 +302,14 @@ class Cytophenograph:
         ax2.set_ylabel("Cluster")
         ax2.grid(False)
         ax2.legend(bbox_to_anchor=(1.2, 1.0))
-        fig.savefig("/".join([self.outfig, "ClusterFrequencyNotNormalized.pdf"]),
+        if self.fileformat == "pdf":
+            fig.savefig("/".join([self.outfig, "ClusterFrequencyNotNormalized.pdf"]),
                     dpi=fig.dpi, bbox_inches='tight',
-                    format='pdf')
+                    format=self.fileformat)
+        else:
+            fig.savefig("/".join([self.outfig, "ClusterFrequencyNotNormalized.svg"]),
+                    dpi=fig.dpi, bbox_inches='tight',
+                    format=self.fileformat)
 
     def runphenograph(self):
         """
