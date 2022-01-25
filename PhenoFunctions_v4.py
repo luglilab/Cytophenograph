@@ -44,7 +44,7 @@ class Cytophenograph:
         self.marker_array = None
         self.anndata_list = []
         self.outfig = None
-        self.fileformat = "svg"
+        self.fileformat = "pdf"
         self.log = logging.getLogger()
         self.log.setLevel(logging.INFO)
         format = logging.Formatter("%(asctime)s %(threadName)-11s %(levelname)-10s %(message)s")
