@@ -45,7 +45,7 @@ if __name__ == '__main__':
     elif options.clustering == "Flowsom":
         print("Clustering tool selected is: Flowsom")
         DictInfo["flowsom_adata"] = run.runflowsom()
-    run.groupbycluster()
-    run.groupbysample()
-    run.exporting()
+    # run.groupbycluster()
+    # run.groupbysample()
+    # run.exporting()
     print("End")
