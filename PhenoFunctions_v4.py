@@ -12,6 +12,8 @@ import logging
 from flowsom import flowsom as flowsom
 import seaborn as sb
 import tempfile
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 tmp = tempfile.NamedTemporaryFile()
 sc.settings.autoshow = False
@@ -167,7 +169,6 @@ class Cytophenograph:
                         else:
                             self.adata = tmp.concatenate(self.anndata_list)
                             self.adata.layers['raw_value'] = self.adata.X
-                        # self.plotdist()
                     except Exception as e:
                         self.log.error("Error. Please check Info File Header or CSV header.")
                         self.log.error("Exception - {0}\n".format(str(e)))
@@ -280,7 +281,7 @@ class Cytophenograph:
         ax = self.adata.to_df().hist(bins=25, figsize=(20, 15))
         fig = ax.get_figure()
         fig.savefig("/".join([self.outfig,".".join(["MarkerHistograms",self.fileformat])]),
-                    dpi=self.dpi, bbox_inches='tight',facecolor='white', trasparent=True,
+                    dpi=self.dpi, bbox_inches='tight', facecolor='white', trasparent=True,
                     format=self.fileformat)
             # ax = sb.pairplot(self.adata.to_df(), plot_kws={'alpha': 0.3})
             # ax.fig.set_size_inches(20,20)
@@ -324,7 +325,8 @@ class Cytophenograph:
         """
         self.log.info("Part2: Phenograph Clustering")
         self.log.info("Markers used for Phenograph clustering:")
-        self.adata_subset = self.adata[:, self.markertoinclude].copy()
+        self.adata_subset = self.adata[:,
+                            self.markertoinclude].copy()
         self.log.info(self.adata_subset.var_names)
         self.log.info("Markers excluded for Phenograph clustering:")
         self.log.info(self.marker_array)
@@ -348,6 +350,7 @@ class Cytophenograph:
         self.tmp_df['UMAP_1'] = self.embedding[:, 0]
         self.tmp_df['UMAP_2'] = self.embedding[:, 1]
         self.tmp_df['Cluster_Phenograph'] = self.adata_subset.obs['pheno_leiden']
+        self.plotdist()
         self.plot_umap()
         self.plot_frequency()
         self.matrixplot()
@@ -386,6 +389,7 @@ class Cytophenograph:
         self.tmp_df['UMAP_1'] = self.embedding[:, 0]
         self.tmp_df['UMAP_2'] = self.embedding[:, 1]
         self.tmp_df['Cluster_Parc'] = self.adata_subset.obs['pheno_leiden']
+        self.plotdist()
         self.plot_umap()
         self.plot_frequency()
         self.matrixplot()
@@ -446,6 +450,7 @@ class Cytophenograph:
         self.tmp_df = pd.DataFrame(self.adata.X, columns=self.adata.var_names)
         self.tmp_df['UMAP_1'] = self.embedding[:, 0]
         self.tmp_df['UMAP_2'] = self.embedding[:, 1]
+        self.plotdist()
         self.plot_umap()
         self.plot_frequency()
         self.matrixplot()
