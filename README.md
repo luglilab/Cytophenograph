@@ -35,6 +35,8 @@ Tested on Debian GNU/Linux server
 ```python
 conda env create -n cytophenograph4 -f ./Cytophenograph/environment_cytophenograph4_linux.yml
 conda activate cytophenograph4
+pip install -e ./Cytophenograph/FlowSOM_LugliLab
+pip install -U PhenoGraph
 ```
 **Strategy 2 : Execute the following command** 
 ```python
