@@ -10,6 +10,7 @@ import parc
 import umap
 import logging
 from flowsom import flowsom as flowsom
+import seaborn as sb
 import tempfile
 import matplotlib.pyplot as plt
 tmp = tempfile.NamedTemporaryFile()
@@ -47,6 +48,7 @@ class Cytophenograph:
         self.fileformat = "pdf" # insert svg to change figure format
         self.log = logging.getLogger()
         self.log.setLevel(logging.INFO)
+        self.dpi = 100
         format = logging.Formatter("%(asctime)s %(threadName)-11s %(levelname)-10s %(message)s")
         #
         ch = logging.StreamHandler(sys.stdout)
@@ -127,7 +129,6 @@ class Cytophenograph:
                 for df in pandas_df_list]):
                     try:
                         for i in range(len(pandas_df_list)):
-                            # print(pandas_df_list[i].index[0][:-2]) sample id derivated
                             # save column with Sample name in list
                             Sample_list = info_file["Sample"].tolist()
                             # check if Sample name are in the anndata index
@@ -135,16 +136,13 @@ class Cytophenograph:
                                 ann_tmp = anndata.AnnData(pandas_df_list[i])
                                 ann_tmp.obs['Sample'] = pandas_df_list[i].index[0][:-2]
                                 #
-                                cell_type = info_file['Cell_type'].loc[info_file['Sample']== pandas_df_list[i].index[0][:-2]]
-                                # ann_tmp.obs['Cell_type'] = cell_type.to_string().split(" ")[-1]
+                                cell_type = info_file['Cell_type'].loc[info_file['Sample'] == pandas_df_list[i].index[0][:-2]]
                                 ann_tmp.obs['Cell_type'] = ''.join(e for e in cell_type.to_string() if e.isalnum())
                                 #
-                                exp = info_file['EXP'].loc[info_file['Sample']== pandas_df_list[i].index[0][:-2]]
-                                # ann_tmp.obs['EXP'] = exp.to_string().split(" ")[-1]
+                                exp = info_file['EXP'].loc[info_file['Sample'] == pandas_df_list[i].index[0][:-2]]
                                 ann_tmp.obs['EXP'] = ''.join(e for e in exp.to_string() if e.isalnum())
                                 #
-                                id = info_file['ID'].loc[info_file['Sample']== pandas_df_list[i].index[0][:-2]]
-                                # ann_tmp.obs['ID'] = id.to_string().split(" ")[-1]
+                                id = info_file['ID'].loc[info_file['Sample'] == pandas_df_list[i].index[0][:-2]]
                                 ann_tmp.obs['ID'] = ''.join(e for e in id.to_string() if e.isalnum())
                                 #
                                 time_point = info_file['Time_point'].loc[info_file['Sample'] == pandas_df_list[i].index[0][:-2]]
@@ -152,15 +150,14 @@ class Cytophenograph:
                                 ann_tmp.obs['Time_point'] = ''.join(e for e in time_point.to_string() if e.isalnum())
                                 #
                                 condition = info_file['Condition'].loc[info_file['Sample'] == pandas_df_list[i].index[0][:-2]]
-                                # ann_tmp.obs['Condition'] = condition.to_string().split(" ")[-1]
                                 ann_tmp.obs['Condition'] = ''.join(e for e in condition.to_string() if e.isalnum())
                                 #
                                 count = info_file['Count'].loc[info_file['Sample'] == pandas_df_list[i].index[0][:-2]]
-                                # ann_tmp.obs['Count'] = count.to_string().split(" ")[-1]
                                 ann_tmp.obs['Count'] = ''.join(e for e in count.to_string() if e.isalnum())
                                 self.anndata_list.append(ann_tmp)
                             else:
-                                self.log.error("Error, this file {0} is not in the column Sample of Infofile. \n Please check sample name and Infofile".format(pandas_df_list[i].index[0][:-2]))
+                                self.log.error("Error, this file {0} is not in the column Sample of Infofile. "
+                                               "\n Please check sample name and Infofile".format(pandas_df_list[i].index[0][:-2]))
                                 sys.exit(1)
                         tmp = self.anndata_list[0]
                         self.anndata_list.pop(0)
@@ -170,11 +167,13 @@ class Cytophenograph:
                         else:
                             self.adata = tmp.concatenate(self.anndata_list)
                             self.adata.layers['raw_value'] = self.adata.X
-                    except (ValueError, Exception):
+                        # self.plotdist()
+                    except Exception as e:
                         self.log.error("Error. Please check Info File Header or CSV header.")
+                        self.log.error("Exception - {0}\n".format(str(e)))
                         sys.exit(1)
         else:
-            self.log.error("Error. Please check Info File Header or CSV header.")
+            self.log.error("Error. Please check Info File Header or CSV header.", exc_info=True)
             sys.exit(1)
         self.tmp_df = pd.DataFrame(self.adata.X, index=self.adata.obs.index)
         self.tmp_df.columns = self.adata.var_names
@@ -273,6 +272,22 @@ class Cytophenograph:
                          show=False,
                          save=".".join(["matrixplot_column_scaled_expression", self.fileformat]))
 
+    def plotdist(self):
+        """
+        Plot histogram and scatter
+        Returns:
+        """
+        ax = self.adata.to_df().hist(bins=25, figsize=(20, 15))
+        fig = ax.get_figure()
+        fig.savefig("/".join([self.outfig,".".join(["MarkerHistograms",self.fileformat])]),
+                    dpi=self.dpi, bbox_inches='tight',facecolor='white', trasparent=True,
+                    format=self.fileformat)
+            # ax = sb.pairplot(self.adata.to_df(), plot_kws={'alpha': 0.3})
+            # ax.fig.set_size_inches(20,20)
+            # ax.savefig("/".join([self.outfig, "MarkerPairPlot.pdf"]),
+            #             dpi=self.dpi, bbox_inches='tight',facecolor='white',trasparent=True,
+            #             format=self.fileformat)
+
     def plot_frequency(self):
         """
 
@@ -286,13 +301,9 @@ class Cytophenograph:
         ax1.set_ylabel("Cluster")
         ax1.grid(False)
         ax1.legend(bbox_to_anchor=(1.2, 1.0))
-        if self.fileformat == "pdf":
-            fig.savefig("/".join([self.outfig, "ClusterFrequencyNormalized.pdf"]),
-                        dpi=100, bbox_inches='tight',
-                        format=self.fileformat)
-        else:
-            fig.savefig("/".join([self.outfig, "ClusterFrequencyNormalized.svg"]),
-                        dpi=fig.dpi, bbox_inches='tight',format=self.fileformat)
+        fig.savefig("/".join([self.outfig, ".".join(["ClusterFrequencyNormalized", self.fileformat])]),
+                    dpi=self.dpi, bbox_inches='tight',
+                    format=self.fileformat)
         fig, (ax2) = plt.subplots(1, 1, figsize=(17 / 2.54, 17 / 2.54))
         ax2 = self.adata_subset.obs.groupby("pheno_leiden")["Sample"].value_counts(normalize=False).unstack().plot.barh(stacked=True,
                                                                                                            legend=False,
@@ -302,13 +313,8 @@ class Cytophenograph:
         ax2.set_ylabel("Cluster")
         ax2.grid(False)
         ax2.legend(bbox_to_anchor=(1.2, 1.0))
-        if self.fileformat == "pdf":
-            fig.savefig("/".join([self.outfig, "ClusterFrequencyNotNormalized.pdf"]),
-                    dpi=fig.dpi, bbox_inches='tight',
-                    format=self.fileformat)
-        else:
-            fig.savefig("/".join([self.outfig, "ClusterFrequencyNotNormalized.svg"]),
-                    dpi=fig.dpi, bbox_inches='tight',
+        fig.savefig("/".join([self.outfig, ".".join(["ClusterFrequencyNotNormalized", self.fileformat])]),
+                    dpi=self.dpi, bbox_inches='tight',
                     format=self.fileformat)
 
     def runphenograph(self):
