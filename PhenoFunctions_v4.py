@@ -350,7 +350,7 @@ class Cytophenograph:
         self.tmp_df['UMAP_1'] = self.embedding[:, 0]
         self.tmp_df['UMAP_2'] = self.embedding[:, 1]
         self.tmp_df['Cluster_Phenograph'] = self.adata_subset.obs['pheno_leiden']
-        self.plotdist()
+        # self.plotdist()
         self.plot_umap()
         self.plot_frequency()
         self.matrixplot()
@@ -389,7 +389,7 @@ class Cytophenograph:
         self.tmp_df['UMAP_1'] = self.embedding[:, 0]
         self.tmp_df['UMAP_2'] = self.embedding[:, 1]
         self.tmp_df['Cluster_Parc'] = self.adata_subset.obs['pheno_leiden']
-        self.plotdist()
+        # self.plotdist()
         self.plot_umap()
         self.plot_frequency()
         self.matrixplot()
@@ -450,7 +450,7 @@ class Cytophenograph:
         self.tmp_df = pd.DataFrame(self.adata.X, columns=self.adata.var_names)
         self.tmp_df['UMAP_1'] = self.embedding[:, 0]
         self.tmp_df['UMAP_2'] = self.embedding[:, 1]
-        self.plotdist()
+        # self.plotdist()
         self.plot_umap()
         self.plot_frequency()
         self.matrixplot()
