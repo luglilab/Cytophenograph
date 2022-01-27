@@ -33,7 +33,7 @@ Tested on Debian GNU/Linux server
 
 **Strategy 1 : Use YML file to clone environment** 
 ```python
-conda env create -n cytophenograph4 -f ./Cytophenograph/environment_cytophenograph3_linux.yml
+conda env create -n cytophenograph4 -f ./Cytophenograph/environment_cytophenograph4_linux.yml
 conda activate cytophenograph4
 ```
 **Strategy 2 : Execute the following command** 
@@ -52,7 +52,7 @@ conda install -c anaconda xlrd
 Tested on computer with ios 10.15.7 
 **Strategy 1 : Use YML file to clone environment** 
 ```python
-conda env create -n cytophenograph4 -f ./Cytophenograph/environment_cytophenograph3_mac.yml
+conda env create -n cytophenograph4 -f ./Cytophenograph/environment_cytophenograph4_mac.yml
 conda activate cytophenograph4
 pip install -e ./Cytophenograph/FlowSOM_LugliLab
 pip install -U PhenoGraph
