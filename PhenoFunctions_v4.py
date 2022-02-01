@@ -248,6 +248,10 @@ class Cytophenograph:
                    palette=self.palette, legend_fontoutline=2, show=False, add_outline=False, frameon=False,
                    legend_loc='on data', title="UMAP Plot",return_fig=False,
                    s=50, save="_legend_on_data.".join(["".join([str(self.tool), "_cluster"]), self.fileformat]))
+        sc.pl.umap(self.adata_subset, color="pheno_leiden",
+                   palette=self.palette, legend_fontoutline=2, show=False, add_outline=False, frameon=False,
+                   legend_loc='on data', title="UMAP Plot",return_fig=False,
+                   s=50, save="_legend_on_data.".join(["".join([str(self.tool), "_cluster"]), 'svg']))
         sc.pl.correlation_matrix(self.adata_subset, "pheno_leiden", show=False,
                                  save=".".join([self.tool, self.fileformat]))
         for _ in list(self.adata_subset.var_names.unique()):
@@ -266,6 +270,10 @@ class Cytophenograph:
                          dendrogram=True, vmin=-2, vmax=2, cmap='RdBu_r', layer="scaled",
                          show=False, swap_axes=False, return_fig=False,
                          save=".".join(["matrixplot_mean_z_score", self.fileformat]))
+        sc.pl.matrixplot(self.adata_subset, list(self.adata_subset.var_names), "pheno_leiden",
+                         dendrogram=True, vmin=-2, vmax=2, cmap='RdBu_r', layer="scaled",
+                         show=False, swap_axes=False, return_fig=False,
+                         save=".".join(["matrixplot_mean_z_score", 'svg']))
         sc.pl.matrixplot(self.adata_subset, list(self.adata_subset.var_names), "pheno_leiden",
                          dendrogram=True, cmap='Blues', standard_scale='var',
                          colorbar_title='column scaled\nexpression', layer="scaled",
@@ -290,6 +298,9 @@ class Cytophenograph:
             fig.savefig("/".join([self.outfig, "ClusterFrequencyNormalized.pdf"]),
                         dpi=100, bbox_inches='tight',
                         format=self.fileformat)
+            fig.savefig("/".join([self.outfig, "ClusterFrequencyNormalized.svg"]),
+                        dpi=100, bbox_inches='tight',
+                        format='svg')
         else:
             fig.savefig("/".join([self.outfig, "ClusterFrequencyNormalized.svg"]),
                         dpi=fig.dpi, bbox_inches='tight',format=self.fileformat)
@@ -431,9 +442,6 @@ class Cytophenograph:
         self.adata_subset.obs['pheno_leiden'] = self.adata_subset.obs['pheno_leiden']
         self.adata.obs['cluster'] = self.adata_subset.obs['pheno_leiden']
         self.adata.obs['Cluster_Flowsom'] = self.adata_subset.obs['pheno_leiden']
-        self.embedding = self.runumap()
-        self.adata.obsm['X_umap'] = self.embedding
-        self.adata_subset.obsm['X_umap'] = self.embedding
         self.embedding = self.runumap()
         self.adata.obsm['X_umap'] = self.embedding
         self.adata_subset.obsm['X_umap'] = self.embedding
