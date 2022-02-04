@@ -86,7 +86,7 @@ conda install -c anaconda xlrd
 
 
 ### Docker 
-
+```
 Please visit Docker Hub:
 https://hub.docker.com/r/sinnamone/cytophenograph
 
@@ -96,7 +96,7 @@ use Dockerfile
 
 docker build  -t cytophenograph4 .
 docker run -it cytophenograph4 bash -c "python /Cytophenograph/cytophenograph.v4.py --help" 
-
+```
 
 ###  Move on Phenograph folder
 
