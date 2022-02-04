@@ -128,7 +128,7 @@ dependencies:
     - flowcytometrytools==0.5.1
     - hnswlib==0.5.2
     - igraph==0.9.8
-    - leidenalg==0.8.8
+    - leidenalg==0.7.0
     - minisom==2.2.9
     - parc==0.31
     - phenograph==1.5.7
