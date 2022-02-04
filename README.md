@@ -101,7 +101,7 @@ mkdir -p $abs_path/Cytophenograph/output_test
 python ./Cytophenograph/cytophenograph.v4.py -i $abs_path/Cytophenograph/Test_dataset2/sample/ -o $abs_path/Cytophenograph/output_test -k 60 -m $abs_path/Cytophenograph/Test_dataset2/markers_to_exclude.txt -n Test -t 10 -p $abs_path/Cytophenograph/Test_dataset2/Info_file_bulk_Test.xlsx -c Phenograph
 # Run PARC
 python ./Cytophenograph/cytophenograph.v4.py -i $abs_path/Cytophenograph/Test_dataset2/sample/ -o $abs_path/Cytophenograph/output_test -k 60 -m $abs_path/Cytophenograph/Test_dataset2/markers_to_exclude.txt -n Test -t 10 -p $abs_path/Cytophenograph/Test_dataset2/Info_file_bulk_Test.xlsx -c Parc
-# Run Phenograph and Parc
+# Run Flowsom
 python ./Cytophenograph/cytophenograph.v4.py -i $abs_path/Cytophenograph/Test_dataset2/sample/ -o $abs_path/Cytophenograph/output_test -k 60 -m $abs_path/Cytophenograph/Test_dataset2/markers_to_exclude.txt -n Test -t 10 -p $abs_path/Cytophenograph/Test_dataset2/Info_file_bulk_Test.xlsx -c Flowsom
 ```
 # 
