@@ -1,4 +1,4 @@
-name: Cytophenograph4
+name: Cytophenograph3
 channels:
   - anaconda
   - conda-forge
@@ -123,4 +123,16 @@ dependencies:
   - zipp=3.6.0=pyhd8ed1ab_0
   - zlib=1.2.11=h36c2ea0_1013
   - zstd=1.5.0=ha95c52a_0
-  
+  - pip:
+    - decorator==5.1.0
+    - flowcytometrytools==0.5.1
+    - hnswlib==0.5.2
+    - igraph==0.9.8
+    - leidenalg==0.8.8
+    - minisom==2.2.9
+    - parc==0.31
+    - phenograph==1.5.7
+    - pybind11==2.8.1
+    - python-igraph==0.9.8
+    - texttable==1.6.4
+prefix: /home/spuccio/anaconda3/envs/Cytophenograph3
