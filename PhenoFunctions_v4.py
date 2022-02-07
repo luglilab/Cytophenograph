@@ -18,6 +18,8 @@ sc.settings.set_figure_params(dpi=300, facecolor='white',
                               figsize=(10, 10))
 sc.settings.verbosity = 0
 warnings.filterwarnings("ignore", category=FutureWarning)
+import matplotlib
+matplotlib.use('Agg')
 
 
 class Cytophenograph:
