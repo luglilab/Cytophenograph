@@ -33,14 +33,14 @@ Tested on Debian GNU/Linux server
 
 **Strategy 1 : Use YML file to clone environment** 
 ```python
-conda env create -n cytophenograph4 -f ./Cytophenograph/environment_cytophenograph4_linux.yml
+conda env create -n cytophenograph5 -f ./Cytophenograph/environment_cytophenograph5_linux.yml
 conda activate cytophenograph4
 pip install -e ./Cytophenograph/FlowSOM_LugliLab
 pip install -U PhenoGraph
 ```
 **Strategy 2 : Execute the following command** 
 ```python
-conda create --name Cytophenograph4 pip python=3.6.1 scanpy 
+conda create --name Cytophenograph5 pip python=3.6.1 scanpy 
 conda activate Cytophenograph4
 pip install leidenalg==0.7.0
 pip install hnswlib
@@ -54,7 +54,7 @@ conda install -c anaconda xlrd
 Tested on computer with ios 10.15.7 
 **Strategy 1 : Use YML file to clone environment** 
 ```python
-conda env create -n cytophenograph4 -f ./Cytophenograph/environment_cytophenograph4_mac.yml
+conda env create -n cytophenograph4 -f ./Cytophenograph/environment_cytophenograph5_mac.yml
 conda activate cytophenograph4
 pip install -e ./Cytophenograph/FlowSOM_LugliLab
 pip install -U PhenoGraph
@@ -75,7 +75,7 @@ Important:  Microsoft Visual C++ 14.0 or greater is required. Get it with "Micro
 **Strategy 1 : Execute the following command** 
 ```python
 conda create --name Cytophenograph4 pip python=3.6.1 scanpy 
-conda activate Cytophenograph4
+conda activate Cytophenograph5
 pip install leidenalg==0.7.0
 pip install hnswlib
 pip install parc
@@ -103,7 +103,7 @@ docker run -it cytophenograph4 bash -c "python /Cytophenograph/cytophenograph.v4
 
 
 ```python
-python ./Cytophenograph/cytophenograph.v4.py --help
+python ./Cytophenograph/cytophenograph.v5.py --help
 ```
 
 
@@ -112,11 +112,11 @@ python ./Cytophenograph/cytophenograph.v4.py --help
 abs_path=$(pwd)
 mkdir -p $abs_path/Cytophenograph/output_test
 # Run Phenograph
-python ./Cytophenograph/cytophenograph.v4.py -i $abs_path/Cytophenograph/Test_dataset2/sample/ -o $abs_path/Cytophenograph/output_test -k 60 -m $abs_path/Cytophenograph/Test_dataset2/markers_to_exclude.txt -n Test -t 10 -p $abs_path/Cytophenograph/Test_dataset2/Info_file_bulk_Test.xlsx -c Phenograph
+python ./Cytophenograph/cytophenograph.v5.py -i $abs_path/Cytophenograph/Test_dataset2/sample/ -o $abs_path/Cytophenograph/output_test -k 60 -m $abs_path/Cytophenograph/Test_dataset2/markers_to_exclude.txt -n Test -t 10 -p $abs_path/Cytophenograph/Test_dataset2/Info_file_bulk_Test.xlsx -c Phenograph
 # Run PARC
-python ./Cytophenograph/cytophenograph.v4.py -i $abs_path/Cytophenograph/Test_dataset2/sample/ -o $abs_path/Cytophenograph/output_test -k 60 -m $abs_path/Cytophenograph/Test_dataset2/markers_to_exclude.txt -n Test -t 10 -p $abs_path/Cytophenograph/Test_dataset2/Info_file_bulk_Test.xlsx -c Parc
+python ./Cytophenograph/cytophenograph.v5.py -i $abs_path/Cytophenograph/Test_dataset2/sample/ -o $abs_path/Cytophenograph/output_test -k 60 -m $abs_path/Cytophenograph/Test_dataset2/markers_to_exclude.txt -n Test -t 10 -p $abs_path/Cytophenograph/Test_dataset2/Info_file_bulk_Test.xlsx -c Parc
 # Run Flowsom
-python ./Cytophenograph/cytophenograph.v4.py -i $abs_path/Cytophenograph/Test_dataset2/sample/ -o $abs_path/Cytophenograph/output_test -k 60 -m $abs_path/Cytophenograph/Test_dataset2/markers_to_exclude.txt -n Test -t 10 -p $abs_path/Cytophenograph/Test_dataset2/Info_file_bulk_Test.xlsx -c Flowsom
+python ./Cytophenograph/cytophenograph.v5.py -i $abs_path/Cytophenograph/Test_dataset2/sample/ -o $abs_path/Cytophenograph/output_test -k 60 -m $abs_path/Cytophenograph/Test_dataset2/markers_to_exclude.txt -n Test -t 10 -p $abs_path/Cytophenograph/Test_dataset2/Info_file_bulk_Test.xlsx -c Flowsom
 ```
 # 
 
