@@ -34,14 +34,14 @@ Tested on Debian GNU/Linux server
 **Strategy 1 : Use YML file to clone environment** 
 ```python
 conda env create -n cytophenograph5 -f ./Cytophenograph/environment_cytophenograph5_linux.yml
-conda activate cytophenograph4
+conda activate cytophenograph5
 pip install -e ./Cytophenograph/FlowSOM_LugliLab
 pip install -U PhenoGraph
 ```
 **Strategy 2 : Execute the following command** 
 ```python
 conda create --name Cytophenograph5 pip python=3.6.1 scanpy 
-conda activate Cytophenograph4
+conda activate Cytophenograph5
 pip install leidenalg==0.7.0
 pip install hnswlib
 pip install parc
@@ -55,7 +55,7 @@ Tested on computer with ios 10.15.7
 **Strategy 1 : Use YML file to clone environment** 
 ```python
 conda env create -n cytophenograph4 -f ./Cytophenograph/environment_cytophenograph5_mac.yml
-conda activate cytophenograph4
+conda activate cytophenograph5
 pip install -e ./Cytophenograph/FlowSOM_LugliLab
 pip install -U PhenoGraph
 ```
