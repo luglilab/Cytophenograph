@@ -319,12 +319,12 @@ class Cytophenograph:
                             "Error, this file {0} is not in the column Sample of Infofile. \n Please check sample name and Infofile".format(
                                 pandas_df_list[i].index[0][:-2]))
                         sys.exit(1)
-                tmp = self.anndata_list[0]
-                self.anndata_list.pop(0)
-                if len(self.anndata_list) == 1:
-                    self.adata = tmp
+                if len(self.anndata_list) == 0:
+                    self.adata = self.anndata_list[0]
                     self.adata.layers['raw_value'] = self.adata.X
                 else:
+                    tmp = self.anndata_list[0]
+                    self.anndata_list.pop(0)
                     self.adata = tmp.concatenate(self.anndata_list)
                     self.adata.layers['raw_value'] = self.adata.X
             except (ValueError, Exception):
@@ -442,10 +442,11 @@ class Cytophenograph:
                        s=50, save="_legend_on_data.".join(["".join([str(self.tool), "_cluster"]), self.fileformat]))
             # umap obs
             for _ in ['Sample', 'Cell_type', 'EXP', 'ID', 'Time_point', 'Condition']:
-                sc.pl.umap(self.adata_subset, color=_, legend_fontoutline=2, show=False, add_outline=False,
-                           frameon=False,
-                           title="UMAP Plot",
-                           s=50, save=".".join(["_".join([str(self.tool),_]), "pdf"]))
+                if len(self.adata_subset.obs[_].unique()) > 1:
+                    sc.pl.umap(self.adata_subset, color=_, legend_fontoutline=2, show=False, add_outline=False,
+                               frameon=False,
+                               title="UMAP Plot",
+                               s=50, save=".".join(["_".join([str(self.tool), _]), "pdf"]))
             # scale data
             self.scaler = MinMaxScaler(feature_range=(0, 1))
             self.adata_subset.layers['scaled01'] = self.scaler.fit_transform(self.adata_subset.layers['raw_value'])
@@ -462,13 +463,11 @@ class Cytophenograph:
                                title=_, cmap='turbo', groups=[_],
                                save=".".join([''.join(e for e in _ if e.isalnum()), self.fileformat])
                                )
-            #self.listmarkerplot = list(self.adata_subset.var_names)
-            #self.listmarkerplot.append('pheno_leiden')
-            #print(self.adata_subset.obs)
-            #print(self.listmarkerplot)
+            self.listmarkerplot = ['pheno_leiden']
+            for _ in range(len(list(self.adata_subset.var_names))):
+                self.listmarkerplot.append(list(self.adata_subset.var_names)[_])
             sc.pl.umap(self.adata_subset, color=self.listmarkerplot, show=False, layer="scaled01",
-                       legend_fontoutline=1, na_in_legend=False, s=30,
-                       title=_, cmap='turbo', groups=[_],
+                       legend_fontoutline=1, na_in_legend=False, s=30, cmap='turbo',
                        save=".".join(["".join([str(self.tool), "_all"]), self.fileformat])
                        )
         elif self.runtime == 'umap':
@@ -479,7 +478,7 @@ class Cytophenograph:
             self.adata_subset.layers['scaled01'] = scaler.fit_transform(self.adata_subset.layers['raw_value'])
             for _ in list(self.adata_subset.var_names.unique()):
                 sc.pl.umap(self.adata_subset, color=_, show=False, layer="scaled01",
-                           legend_fontoutline=1, na_in_legend=False, s=30,
+                           legend_fontoutline=1, na_in_legend=False, s=30, frameon=False,
                            title=_, cmap='turbo', groups=[_],
                            save=".".join([''.join(e for e in _ if e.isalnum()), self.fileformat])
                            )
@@ -489,10 +488,12 @@ class Cytophenograph:
                        save=".".join(["".join([str(self.tool), "_all"]), self.fileformat])
                        )
             for _ in ['Sample', 'Cell_type', 'EXP', 'ID', 'Time_point', 'Condition']:
-                sc.pl.umap(self.adata_subset, color=_,
-                           cmap=self.palette, legend_fontoutline=2, show=False, add_outline=False, frameon=False,
-                           title="UMAP Plot",
-                           s=50, save=".".join(["_".join([str(self.tool), _]), "pdf"]))
+                if len(self.adata_subset.obs[_].unique()) > 1:
+                    sc.pl.umap(self.adata_subset, color=_,
+                               cmap=self.palette, legend_fontoutline=2, show=False, add_outline=False, frameon=False,
+                               title="UMAP Plot",
+                               s=50, save=".".join(["_".join([str(self.tool), _]), "pdf"]))
+
         elif self.runtime == 'clustering':
             self.createdir("/".join([self.output_folder, "".join(["Figures", self.tool])]))
             self.outfig = "/".join([self.output_folder, "".join(["Figures", self.tool])])
@@ -764,22 +765,24 @@ class Cytophenograph:
                         format=self.fileformat)
             #
             for _ in ['Sample', 'Cell_type', 'EXP', 'ID', 'Time_point', 'Condition']:
-                fig, (ax3) = plt.subplots(1, 1, figsize=(17 / 2.54, 17 / 2.54))
-                ax3 = self.adata_subset.T.var.groupby(_)["pheno_leiden"].value_counts(
-                    normalize=True).unstack().plot.barh(
-                    stacked=True,
-                    legend=False,
-                    color=self.palette,
-                    ax=ax3,
-                    fontsize=5)
-                ax3.set_xlabel("Cluster Percentage Frequency")
-                ax3.set_ylabel(_)
-                ax3.grid(False)
-                ax3.legend(bbox_to_anchor=(1.2, 1.0))
-                fig.savefig("/".join([self.outfig, ".".join(["".join([_,"ClusterFrequencyNormalized"]),
-                                                             self.fileformat])]),
-                            dpi=self.dpi, bbox_inches='tight',
-                            format=self.fileformat)
+                if len(self.adata_subset.obs[_].unique()) > 1:
+                    fig, (ax3) = plt.subplots(1, 1, figsize=(17 / 2.54, 17 / 2.54))
+                    ax3 = self.adata_subset.T.var.groupby(_)["pheno_leiden"].value_counts(
+                        normalize=True).unstack().plot.barh(
+                        stacked=True,
+                        legend=False,
+                        color=self.palette,
+                        ax=ax3,
+                        fontsize=5)
+                    ax3.set_xlabel("Cluster Percentage Frequency")
+                    ax3.set_ylabel(_)
+                    ax3.grid(False)
+                    ax3.legend(bbox_to_anchor=(1.2, 1.0))
+                    fig.savefig("/".join([self.outfig, ".".join(["".join([_, "ClusterFrequencyNormalized"]),
+                                                                 self.fileformat])]),
+                                dpi=self.dpi, bbox_inches='tight',
+                                format=self.fileformat)
+
             #
             fig, (ax2) = plt.subplots(1, 1, figsize=(17 / 2.54, 17 / 2.54))
             ax2 = self.adata_subset.obs.groupby("pheno_leiden")["Sample"].value_counts(
