@@ -114,6 +114,7 @@ dependencies:
   - readline=6.2=0
   - requests=2.25.1=pyhd3deb0d_0
   - scanpy=1.7.2=pyhdfd78af_0
+  - scanorama=1.7.1=py_0
   - scikit-learn=0.24.2=py36h979b75d_1
   - seaborn=0.11.2=hd8ed1ab_0
   - seaborn-base=0.11.2=pyhd8ed1ab_0
