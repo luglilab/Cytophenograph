@@ -61,7 +61,7 @@ pip install -U PhenoGraph
 ```
 **Strategy 2 : Execute the following command** 
 ```python
-conda create --name Cytophenograph5 pip python=3.6.1 scanpy=1.7.2 xlrd=1.2.0  hnswlib leidenalg=0.7.0 scipy=1.4.1  
+conda create --name Cytophenograph5 pip python=3.6.1 scanpy=1.7.2 xlrd=1.2.0  hnswlib scipy=1.4.1 leidenalg=0.8.8 
 conda activate Cytophenograph5
 pip install parc
 pip install phenograph==1.5.6
