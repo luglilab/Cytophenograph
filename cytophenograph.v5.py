@@ -22,7 +22,7 @@ parser.add_option('-d', action="store", dest="mindist", default=0.5, help='min_d
 parser.add_option('-s', action="store", dest="spread", default=1, help='spread parameter for UMAP generation')
 parser.add_option('-r', type='choice', choices=['full', 'umap', 'clustering'],
                   dest="runtime",
-                  default="full", help='Runtime option for custom analysis.')
+                  default="full", help='Runtime option for custom analysis. The available options are full , umap , clustering ')
 options, args = parser.parse_args()
 
 
