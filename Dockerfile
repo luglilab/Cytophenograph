@@ -11,3 +11,4 @@ RUN pip install -U PhenoGraph
 RUN pip install -e ./Cytophenograph/FlowSOM_LugliLab
 RUN pip install openpyxl
 RUN conda install -c conda-forge matplotlib=3.3.4
+RUN conda install -c bioconda scanorama
