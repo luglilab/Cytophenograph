@@ -1,4 +1,8 @@
+.DS_Store
+.gitattributes
+PKG-INFO
 README.md
+setup.cfg
 setup.py
 FlowSom.egg-info/PKG-INFO
 FlowSom.egg-info/SOURCES.txt
@@ -9,3 +13,4 @@ flowsom/__init__.py
 flowsom/__version__.py
 flowsom/cluster.py
 flowsom/flowsomtool.py
+flowsom/__pycache__/__init__.cpython-36.pyc
