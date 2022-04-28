@@ -36,18 +36,20 @@ Tested on Debian GNU/Linux server
 conda env create -n cytophenograph5 -f ./Cytophenograph/environment_cytophenograph5_linux.yml
 conda activate cytophenograph5
 pip install -e ./Cytophenograph/FlowSOM_LugliLab
-pip install -U PhenoGraph
+pip install phenograph==1.5.7
 ```
 **Strategy 2 : Execute the following command** 
 ```python
-conda create --name Cytophenograph5 pip python=3.6.1 scanpy 
+conda create --name Cytophenograph5 pip python=3.7 scanpy=1.9.1 leidenalg=0.7.0
 conda activate Cytophenograph5
 pip install leidenalg==0.7.0
 pip install hnswlib
 pip install parc
-pip install -U PhenoGraph
 pip install -e ./Cytophenograph/FlowSOM_LugliLab
 conda install -c anaconda xlrd
+pip install phenograph==1.5.7
+pip install scanorama==1.7.1
+pip install openpyxl==3.0.9
 ```
 
 ### Installation on MAC machine
@@ -57,15 +59,17 @@ Tested on computer with ios 10.15.7
 conda env create -n cytophenograph5 -f ./Cytophenograph/environment_cytophenograph5_mac.yml
 conda activate cytophenograph5
 pip install -e ./Cytophenograph/FlowSOM_LugliLab
-pip install -U PhenoGraph
+pip install phenograph=1.5.7
 ```
 **Strategy 2 : Execute the following command** 
 ```python
-conda create --name Cytophenograph5 pip python=3.6.1 scanpy=1.7.2 xlrd=1.2.0  hnswlib leidenalg=0.7.0 scipy=1.4.1  
+conda create --name Cytophenograph5 pip python=3.7 scanpy=1.9.1  xlrd=1.2.0  hnswlib scipy=1.4.1 leidenalg=0.7.0 scanorama=1.7.1 
 conda activate Cytophenograph5
 pip install parc
-pip install phenograph
+pip install phenograph==1.5.6
 pip install -e ./Cytophenograph/FlowSOM_LugliLab
+conda install -c bioconda scanorama
+pip install openpyxl==3.0.9
 ```
 
 ### Installation on WINDOWS machine
@@ -94,8 +98,8 @@ or
 
 use Dockerfile
 
-docker build  -t cytophenograph4 .
-docker run -it cytophenograph4 bash -c "python /Cytophenograph/cytophenograph.v4.py --help" 
+docker build  -t cytophenograph5 .
+docker run -it cytophenograph5 bash -c "python /Cytophenograph/cytophenograph.v5.py --help" 
 ```
 
 ###  Move on Phenograph folder
