@@ -40,14 +40,16 @@ pip install -U PhenoGraph
 ```
 **Strategy 2 : Execute the following command** 
 ```python
-conda create --name Cytophenograph5 pip python=3.6.1 scanpy 
+conda create --name Cytophenograph5 pip python=3.7 scanpy=1.9.1  leidenalg=0.7.0
 conda activate Cytophenograph5
 pip install leidenalg==0.7.0
 pip install hnswlib
 pip install parc
-pip install -U PhenoGraph
 pip install -e ./Cytophenograph/FlowSOM_LugliLab
 conda install -c anaconda xlrd
+pip install PhenoGraph=1.5.7
+pip install scanorama=1.7.1
+pip install openpyxl
 ```
 
 ### Installation on MAC machine
