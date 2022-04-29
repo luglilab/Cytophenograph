@@ -59,7 +59,7 @@ Tested on computer with ios 10.15.7
 conda env create -n cytophenograph5 -f ./Cytophenograph/environment_cytophenograph5_mac.yml
 conda activate cytophenograph5
 pip install -e ./Cytophenograph/FlowSOM_LugliLab
-pip install phenograph=1.5.7
+pip install phenograph==1.5.7
 ```
 **Strategy 2 : Execute the following command** 
 ```python
