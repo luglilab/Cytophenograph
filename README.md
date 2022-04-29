@@ -92,7 +92,7 @@ conda install -c anaconda xlrd
 ### Docker 
 ```
 Please visit Docker Hub:
-https://hub.docker.com/r/sinnamone/cytophenograph
+https://hub.docker.com/r/sinnamone/cytophenograph5
 
 or 
 
