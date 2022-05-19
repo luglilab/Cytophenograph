@@ -10,5 +10,5 @@ frames <- read.FCS(fcs)
 as(frames, "flowSet")
 
 resQC <- flow_auto_qc(frames,fcs_QC = "_concatenate_after_QC",output = 2,mini_report = FALSE,
-                      second_fractionFR=0.1,
+                      second_fractionFR=0.01,
                       folder_results =outputfolder) 
