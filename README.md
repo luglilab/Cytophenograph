@@ -33,23 +33,24 @@ Tested on Debian GNU/Linux server
 
 **Strategy 1 : Use YML file to clone environment** 
 ```python
-conda env create -n cytophenograph5 -f ./Cytophenograph/environment_cytophenograph5_linux.yml
-conda activate cytophenograph5
+conda env create -n cytophenograph5.1 -f ./Cytophenograph/environment_cytophenograph5_linux.yml
+conda activate cytophenograph5.1
 pip install -e ./Cytophenograph/FlowSOM_LugliLab
 pip install phenograph==1.5.7
 ```
 **Strategy 2 : Execute the following command** 
 ```python
-conda create --name Cytophenograph5 pip python=3.7 scanpy=1.9.1 leidenalg=0.7.0
-conda activate Cytophenograph5
-pip install leidenalg==0.7.0
-pip install hnswlib
-pip install parc
+conda create --name Cytophenograph5.1 python=3.7  r-base hnswlib
+conda activate Cytophenograph5.1
+pip install pyVIA
+conda install -c bioconda scanorama -y
+conda install -c conda-forge datashader -y
+conda install -c anaconda openpyxl -y
 pip install -e ./Cytophenograph/FlowSOM_LugliLab
-conda install -c anaconda xlrd
 pip install phenograph==1.5.7
-pip install scanorama==1.7.1
-pip install openpyxl==3.0.9
+pip install fcsy
+conda install -c bioconda bioconductor-flowai -y
+conda install scikit-image -y
 ```
 
 ### Installation on MAC machine
