@@ -63,13 +63,17 @@ pip install phenograph==1.5.7
 ```
 **Strategy 2 : Execute the following command** 
 ```python
-conda create --name Cytophenograph5 pip python=3.6.1 scanpy=1.7.2 xlrd=1.2.0  hnswlib scipy=1.4.1 leidenalg=0.8.8 scanorama=1.7.1
-conda activate Cytophenograph5
-pip install parc
-pip install phenograph==1.5.6
+conda create --name Cytophenograph5.1 python=3.7  r-base hnswlib
+conda activate Cytophenograph5.1
+pip install pyVIA
+conda install -c bioconda scanorama -y
+conda install -c conda-forge datashader -y
+conda install -c anaconda openpyxl
 pip install -e ./Cytophenograph/FlowSOM_LugliLab
-conda install -c bioconda scanorama
-pip install openpyxl==3.0.9
+pip install phenograph==1.5.7
+pip install fcsy
+conda install -c bioconda bioconductor-flowai
+conda install scikit-image
 ```
 
 ### Installation on WINDOWS machine
