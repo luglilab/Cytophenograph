@@ -6,7 +6,7 @@ import sys
 import pandas as pd
 import phenograph as pg
 import scanpy as sc
-import parc
+import pyVIA.core as via
 import umap
 import logging
 from flowsom import flowsom as flowsom
@@ -17,6 +17,9 @@ import scipy
 import matplotlib.pyplot as plt
 import seaborn as sb
 from sklearn.preprocessing import MinMaxScaler
+import fcsy
+import subprocess
+import numpy as np
 matplotlib.use('Agg')
 
 
@@ -61,6 +64,8 @@ class Cytophenograph:
         self.batchcov = batchcov
         self.runtime = runtime
         self.listmarkerplot = None
+        self.concatenate_fcs = None
+        self.path_flowai = os.path.dirname(os.path.realpath(__file__)) + '/flowai.Rscript'
         if 0.001 <= float(mindist) <= 1.0:
             self.mindist = float(mindist)
         else:
@@ -248,6 +253,7 @@ class Cytophenograph:
         list_with_file_name_and_path = []
         for file_, name in zip(all_files, names):
             list_with_file_name_and_path.append(file_)
+
         return list_with_file_name_and_path
 
     def create_df(self, path_csv_file):
@@ -263,7 +269,23 @@ class Cytophenograph:
             barcode.append("_".join([names.split(".")[0], str(_)]))
         df.index = barcode
         return df
+    
+    #def create_fcs(self, path_csv_file):
+    #    """
+    #    create dataframe file csv
+    #    :return:
+    #    """
+    #    self.createdir("/".join([self.output_folder, "FCSsample"]))
+    #    for i in range(len(path_csv_file)):
+    #        # create df from csv
+    #        df = pd.read_csv(path_csv_file[i], header=0)
+    #        # save file name
+    #        sample_name = ".".join([os.path.basename(path_csv_file[i]).split(".")[0],"fcs"])
+    #        # export csv
+    #        fcsy.write_fcs(path="/".join([self.output_folder,"/".join(["FCSsample",
+    #                                                                   sample_name]) ]),df=df)
 
+    
     def concatenate_dataframe(self, info_file, csv_list):
         """
 
@@ -326,6 +348,10 @@ class Cytophenograph:
                     tmp = self.anndata_list[0]
                     self.anndata_list.pop(0)
                     self.adata = tmp.concatenate(self.anndata_list)
+                    newheader = []
+                    for _ in list(self.adata.var_names):
+                        newheader.append(_.split(":: ")[-1])
+                    self.adata.var_names = newheader
                     self.adata.layers['raw_value'] = self.adata.X
             except (ValueError, Exception):
                 self.log.error("Error. Please check Info File Header or CSV header.")
@@ -334,12 +360,6 @@ class Cytophenograph:
             self.log.error("Error. Please check Info File Header or CSV header.")
             sys.exit(1)
         self.tmp_df = pd.DataFrame(self.adata.X, index=self.adata.obs.index)
-        if sum('::' in s for s in list(self.adata.var_names)) == len(list(self.adata.var_names)):
-            for _ in range(len(list(self.adata.var_names))):
-                self.newheader.append(list(self.adata.var_names)[_].split("::")[-1].upper())
-            self.tmp_df.columns = [x.strip(' ') for x in self.newheader]
-        else:
-            self.tmp_df.columns = self.adata.var_names
         return self.adata
 
     def correct_scanorama(self):
@@ -387,6 +407,11 @@ class Cytophenograph:
         """
         # read marker file
         self.marker_array = [line.rstrip() for line in open(self.marker_list)]
+        newmarker = []
+        for _ in self.marker_array:
+            newmarker.append(_.split(":: ")[-1])
+        self.marker_array = newmarker
+        print(self.marker_array)
         # read concatenate file
         for i in range(len(self.marker_array)):
             if self.marker_array[i] in self.adata.var_names.to_list():
@@ -517,12 +542,46 @@ class Cytophenograph:
         else:
             pass
 
+    def createfcs(self):
+        """
+    
+        """
+        try:
+            self.log.info("Perform flow_auto_qc with FlowAI tool.")
+            df = pd.DataFrame(self.adata.X, columns=self.adata.var.index, index=self.adata.obs.index)
+            df1 = pd.DataFrame(self.adata.X, columns=self.adata.var.index, index=self.adata.obs.index)
+            self.concatenate_fcs = "/".join([self.output_folder,
+                               "Test_ConcatenatedCells.fcs"])
+            if 'Time' in df.columns:
+                fcsy.write_fcs(path=self.concatenate_fcs, df=df)
+                fnull = open(os.devnull, 'w')
+                subprocess.check_call(['Rscript', '--vanilla',
+                                       self.path_flowai,self.concatenate_fcs,
+                                   self.output_folder], stdout=fnull, stderr=fnull)
+                df =fcsy.read_fcs("/".join([self.output_folder,"V1_concatenate_after_QC.fcs"]))
+                df.set_index(self.adata.obs.index,inplace=True)
+                self.adata2 = sc.AnnData(df)
+                self.adata2.obs = self.adata.obs
+                self.adata = self.adata2.copy()
+                del self.adata2
+                self.adata = self.adata[(self.adata[:,'remove_from_all'].X<10000).flatten(), : ]
+                time_indicator = np.in1d(self.adata.var_names, 'remove_from_all')
+                self.adata = self.adata[:, ~ time_indicator]
+                self.adata.layers['raw_value'] = self.adata.X
+                return self.adata
+            else:
+                self.log.info("Time channel not found. Skip QC")
+        except:
+            self.log.info("Impossible to complete flow_auto_qc. Check Time channel. ")
+            pass   
+
     def runphenograph(self):
         """
         Function for execution of phenograph analysis
         :return:
         """
         self.log.info("Part2: Phenograph Clustering")
+        self.createfcs()
         self.log.info("Markers used for Phenograph clustering:")
         self.adata_subset = self.adata[:, self.markertoinclude].copy()
         self.log.info(self.adata_subset.var_names)
@@ -569,6 +628,7 @@ class Cytophenograph:
         :return:
         """
         self.log.info("Part2: PARC Clustering")
+        self.createfcs()
         self.log.info("Markers used for Parc clustering:")
         self.adata_subset = self.adata[:, self.markertoinclude].copy()
         self.log.info(self.adata_subset.var_names)
@@ -588,11 +648,12 @@ class Cytophenograph:
                 self.adata_subset.layers['scaled'] = sc.pp.scale(self.adata_subset, max_value=6,
                                                                  zero_center=True, copy=True).X
                 self.adata_subset.X = self.adata_subset.layers['scaled']
-        p = parc.PARC(self.adata_subset.X, random_seed=42, knn=int(self.k_coef),
+        root_user = [1]
+        p = via.VIA(self.adata_subset.X, random_seed=42, knn=int(self.k_coef),root_user=root_user,
                       jac_std_global='median', jac_weighted_edges=False, distance='l2',
                       small_pop=10,
                       num_threads=int(self.thread))
-        p.run_PARC()
+        p.run_VIA()
         self.adata_subset.obs['pheno_leiden'] = [str(i) for i in p.labels]
         self.adata_subset.obs['pheno_leiden'] = self.adata_subset.obs['pheno_leiden'].astype(int) + 1
         self.adata_subset.obs['pheno_leiden'] = self.adata_subset.obs['pheno_leiden'].astype('category')
@@ -618,6 +679,7 @@ class Cytophenograph:
         self.log.info(self.markertoinclude)
         self.log.info("Markers excluded for Flowsom clustering:")
         self.log.info(self.marker_array)
+        self.createfcs()
         if self.runtime != 'clustering':
             if self.scanorama is True:
                 self.adata_subset = self.correct_scanorama()
@@ -671,8 +733,8 @@ class Cytophenograph:
         # revert dict
         output_tf_df['category'] = output_tf_df['category'].map({v: k for k, v in b["index"].items()})
         # assign
-        self.adata_subset.obs['pheno_leiden'] = output_tf_df['category'].values
-        self.adata.obs['cluster'] = output_tf_df['category'].values
+        self.adata_subset.obs['pheno_leiden'] = output_tf_df['category'].values + 1
+        self.adata.obs['cluster'] = output_tf_df['category'].values  + 1
         # convert to category
         self.adata_subset.obs['pheno_leiden'] = self.adata_subset.obs['pheno_leiden'].astype('category')
         self.adata.obs['Cluster_Flowsom'] = self.adata_subset.obs['pheno_leiden'].astype('category')
@@ -822,7 +884,7 @@ class Cytophenograph:
         :return:
         """
         # make dir
-        self.createdir("/".join([self.output_folder, "".join(["FCScluster", self.tool])]))
+        self.createdir("/".join([self.output_folder, "".join(["CSVcluster", self.tool])]))
         self.adata.obs['cluster'] = self.adata.obs['cluster'].astype(int)
         for _ in range(self.adata.obs['cluster'].unique().min(), self.adata.obs['cluster'].unique().max() + 1):
             self.tmp = self.adata[self.adata.obs['cluster'].isin([_])].to_df()
@@ -836,7 +898,7 @@ class Cytophenograph:
                 self.tmp['Parc'] = _
             else:
                 self.tmp['Flowsom'] = _
-            self.tmp.to_csv("/".join([self.output_folder, "".join(["FCScluster",
+            self.tmp.to_csv("/".join([self.output_folder, "".join(["CSVcluster",
                                                                    self.tool]), "".join([self.analysis_name, "_",
                                                                                          str(_), ".csv"])]),
                             header=True, index=False)
@@ -846,7 +908,7 @@ class Cytophenograph:
         Function for generation of csv with different clusters
         """
         # make dir
-        self.createdir("/".join([self.output_folder, "".join(["FCSsample", self.tool])]))
+        self.createdir("/".join([self.output_folder, "".join(["CSVsample", self.tool])]))
         # tmp df
         self.tmp = self.adata.to_df()
         self.tmp = self.tmp.astype(int)
@@ -892,7 +954,7 @@ class Cytophenograph:
             # save samples
             for i in range(len(unique_filename)):
                 dfCounts[unique_filename[i]] = self.tmp.loc[self.tmp.index == unique_filename[i]].to_csv(
-                    "/".join([self.output_folder, "".join(["FCSsample", self.tool]),
+                    "/".join([self.output_folder, "".join(["CSVsample", self.tool]),
                               "".join([str(unique_filename[i]), "_", self.analysis_name,
                                        ".csv"])]),
                     header=True, index=False)
@@ -900,7 +962,7 @@ class Cytophenograph:
             unique_filename = self.adata.obs['Sample'].unique()
             for i in range(len(unique_filename)):
                 self.tmp.loc[self.tmp.index == unique_filename[i]].to_csv(
-                    "/".join([self.output_folder, "".join(["FCSsample", self.tool]),
+                    "/".join([self.output_folder, "".join(["CSVsample", self.tool]),
                               "".join([str(unique_filename[i]), "_", self.analysis_name,
                                        ".csv"])]),
                     header=True, index=False)
