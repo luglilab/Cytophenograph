@@ -122,8 +122,8 @@ abs_path=$(pwd)
 mkdir -p $abs_path/Cytophenograph/output_test
 # Run Phenograph
 python ./Cytophenograph/cytophenograph.v5.py -i $abs_path/Cytophenograph/Test_dataset2/sample/ -o $abs_path/Cytophenograph/output_test -k 60 -m $abs_path/Cytophenograph/Test_dataset2/markers_to_exclude.txt -n Test -t 10 -p $abs_path/Cytophenograph/Test_dataset2/Info_file_bulk_Test.xlsx -c Phenograph
-# Run PARC
-python ./Cytophenograph/cytophenograph.v5.py -i $abs_path/Cytophenograph/Test_dataset2/sample/ -o $abs_path/Cytophenograph/output_test -k 60 -m $abs_path/Cytophenograph/Test_dataset2/markers_to_exclude.txt -n Test -t 10 -p $abs_path/Cytophenograph/Test_dataset2/Info_file_bulk_Test.xlsx -c Parc
+# Run VIA
+python ./Cytophenograph/cytophenograph.v5.py -i $abs_path/Cytophenograph/Test_dataset2/sample/ -o $abs_path/Cytophenograph/output_test -w 30 -z 1.0 -m $abs_path/Cytophenograph/Test_dataset2/markers_to_exclude.txt -n Test -t 10 -p $abs_path/Cytophenograph/Test_dataset2/Info_file_bulk_Test.xlsx -c VIA 
 # Run Flowsom
 python ./Cytophenograph/cytophenograph.v5.py -i $abs_path/Cytophenograph/Test_dataset2/sample/ -o $abs_path/Cytophenograph/output_test -k 60 -m $abs_path/Cytophenograph/Test_dataset2/markers_to_exclude.txt -n Test -t 10 -p $abs_path/Cytophenograph/Test_dataset2/Info_file_bulk_Test.xlsx -c Flowsom
 ```
@@ -143,7 +143,7 @@ Please ignore this warning.
 
 
 **Output**
- - [Output Folder]: Empty folder where user will find .h5ad file ( ready to use for Cellxgene https://chanzuckerberg.github.io/cellxgene/), FCScluster[Phenograph or Parc] folder and FCSsample[Phenograph or Parc] folder with Tot_counts.txt and Tot_percentage.txtand with absolute and percentage frequency and log.txt with analysis execution information. 
+ - [Output Folder]: Empty folder where user will find .h5ad file ( ready to use for Cellxgene https://chanzuckerberg.github.io/cellxgene/), CSVcluster[Phenograph or VIA] folder and CSVsample[Phenograph or VIA] folder with Tot_counts.txt and Tot_percentage.txtand with absolute and percentage frequency and log.txt with analysis execution information. 
  
  **Graphics output**
  h5ad file with UMAP and others graphical output could be open with Cellxgene ( https://chanzuckerberg.github.io/cellxgene/ ). 
