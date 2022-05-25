@@ -10,7 +10,8 @@ parser.add_option('-k', action="store", dest="kmeancoef", help='Number for neare
 parser.add_option('-m', action="store", dest="markerlist", help='Text file with features(channel name) to exclude during clustering execution.')
 parser.add_option('-n', action="store", dest="analysis_name", help='Analysis name.')
 parser.add_option('-t', action="store", dest="thread",type=int,default=1, help='Number of jobs.')
-parser.add_option('-p', action="store", dest="pheno", help='Excel file with the following columns "Sample-Cell_type-EXP-ID-Time_point-Condition-Count", that will be integrated as metadata.')
+parser.add_option('-p', action="store", dest="pheno",default="Condition",
+                  help='Excel file with the following columns "Sample-Cell_type-EXP-ID-Time_point-Condition-Count", that will be integrated as metadata.')
 parser.add_option('-c', type='choice', choices=['Phenograph', 'VIA', 'Flowsom'],
                   dest="clustering",
                   default="Phenograph", help='Tool selecting for clustering, Selection available are [Phenograph,VIA,Flowsom].')

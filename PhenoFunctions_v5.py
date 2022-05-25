@@ -117,9 +117,11 @@ class Cytophenograph:
         elif self.tool == "VIA":
             self.log.info("VIA KNN-coef: {}".format(knn))
             self.log.info("VIA Resolution: {}".format(resolution))
-        else:
+        elif self.tool == "Flowsom":
             self.log.info("Flowsom Min proposed number of clusters: {}".format(minclus))
             self.log.info("Flowsom Max proposed number of clusters: {}".format(maxclus))
+        else:
+            self.log.error("Error. Please select tool for clustering.Selection available are [Phenograph,VIA,Flowsom].")
         self.log.info("Runtime option: {}".format(runtime))
         if self.scanorama is True:
             self.log.info("Covariate selected for batch correction is: {}".format(batchcov))
