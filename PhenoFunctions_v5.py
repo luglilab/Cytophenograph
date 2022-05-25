@@ -33,11 +33,10 @@ warnings.filterwarnings("ignore", category=FutureWarning)
 
 class Cytophenograph:
     def __init__(self, info_file, input_folder, output_folder, k_coef, marker_list, analysis_name, thread, tool, batch,
-                 batchcov, mindist, spread, runtime):
+                 batchcov, mindist, spread, runtime, knn,resolution,minclus,maxclus):
         self.info_file = info_file
         self.input_folder = input_folder
         self.output_folder = output_folder
-        self.k_coef = k_coef
         self.marker_list = marker_list
         self.analysis_name = analysis_name
         self.thread = thread
@@ -63,6 +62,27 @@ class Cytophenograph:
         self.scanorama = batch
         self.batchcov = batchcov
         self.runtime = runtime
+        if self.tool == "Phenograph":
+            self.k_coef = k_coef
+        if self.tool == "VIA":
+            if 10 <= int(knn) <= 100:
+                self.knn = knn
+            if 0.2 <= float(resolution) <= 1.5:
+                self.resolution = resolution
+            else:
+                self.log.error("Error. Resolution paramater should be a floting number between 0.2 and 1.5")
+                sys.exit(1)
+        if self.tool == "Flowsom":
+            self.minclus = minclus
+            self.maxclus = maxclus
+            if int(self.minclus) > int(self.maxclus):
+                self.log.error(
+                    "Error. Flowsom Min proposed number of clusters parameter (minclus) is bigger than Flowsom Max proposed number of clusters (maxclus).")
+                sys.exit(1)
+            if int(self.maxclus) - int(self.minclus) < 2:
+                self.log.error(
+                    "Error. Flowsom Min proposed number of clusters parameter (minclus) or Flowsom Max proposed number of clusters (maxclus) are too much similar.")
+                sys.exit(1)
         self.listmarkerplot = None
         self.concatenate_fcs = None
         self.path_flowai = os.path.dirname(os.path.realpath(__file__)) + '/flowai.Rscript'
@@ -76,6 +96,7 @@ class Cytophenograph:
         else:
             self.log.error("Error. Min_dist parameter should be between 0.1 and 1.")
             sys.exit(1)
+        self.root_user = [1]
         format = logging.Formatter("%(asctime)s %(threadName)-11s %(levelname)-10s %(message)s")
         #
         ch = logging.StreamHandler(sys.stdout)
@@ -89,9 +110,16 @@ class Cytophenograph:
         self.log.info("Input folder: {}".format(input_folder))
         self.log.info("Output folder: {}".format(output_folder))
         self.log.info("Info file: {}".format(info_file))
-        self.log.info("Phenograph K-coef: {}".format(k_coef))
         self.log.info("Marker list file: {}".format(marker_list))
         self.log.info("Clustering tool option: {}".format(tool))
+        if self.tool == "Phenograph":
+            self.log.info("Phenograph K-coef: {}".format(k_coef))
+        elif self.tool == "VIA":
+            self.log.info("VIA KNN-coef: {}".format(knn))
+            self.log.info("VIA Resolution: {}".format(resolution))
+        else:
+            self.log.info("Flowsom Min proposed number of clusters: {}".format(minclus))
+            self.log.info("Flowsom Max proposed number of clusters: {}".format(maxclus))
         self.log.info("Runtime option: {}".format(runtime))
         if self.scanorama is True:
             self.log.info("Covariate selected for batch correction is: {}".format(batchcov))
@@ -622,14 +650,14 @@ class Cytophenograph:
         self.matrixplot()
         return self.adata
 
-    def runparc(self):
+    def runvia(self):
         """
         function for execution of
         :return:
         """
-        self.log.info("Part2: PARC Clustering")
+        self.log.info("Part2: VIA Clustering")
         self.createfcs()
-        self.log.info("Markers used for Parc clustering:")
+        self.log.info("Markers used for VIA clustering:")
         self.adata_subset = self.adata[:, self.markertoinclude].copy()
         self.log.info(self.adata_subset.var_names)
         self.log.info("Markers excluded for Phenograph clustering:")
@@ -648,17 +676,16 @@ class Cytophenograph:
                 self.adata_subset.layers['scaled'] = sc.pp.scale(self.adata_subset, max_value=6,
                                                                  zero_center=True, copy=True).X
                 self.adata_subset.X = self.adata_subset.layers['scaled']
-        root_user = [1]
-        p = via.VIA(self.adata_subset.X, random_seed=42, knn=int(self.k_coef),root_user=root_user,
+        p = via.VIA(self.adata_subset.X, random_seed=42, knn=int(self.knn),root_user=self.root_user,
                       jac_std_global='median', jac_weighted_edges=False, distance='l2',
-                      small_pop=10,
+                      small_pop=10,resolution_parameter=self.resolution,
                       num_threads=int(self.thread))
         p.run_VIA()
         self.adata_subset.obs['pheno_leiden'] = [str(i) for i in p.labels]
         self.adata_subset.obs['pheno_leiden'] = self.adata_subset.obs['pheno_leiden'].astype(int) + 1
         self.adata_subset.obs['pheno_leiden'] = self.adata_subset.obs['pheno_leiden'].astype('category')
         self.adata.obs['cluster'] = self.adata_subset.obs['pheno_leiden'].values
-        self.adata.obs['Parc_cluster'] = self.adata_subset.obs['pheno_leiden'].values
+        self.adata.obs['VIA_cluster'] = self.adata_subset.obs['pheno_leiden'].values
         if self.runtime != 'clustering':
             self.embedding = self.runumap()
             self.adata.obsm['X_umap'] = self.embedding
@@ -716,8 +743,8 @@ class Cytophenograph:
         from sklearn.cluster import AgglomerativeClustering
         tt.meta_clustering(AgglomerativeClustering,
                            # cluster_class: e.g. KMeans, a cluster class, like "from sklearn.cluster import KMeans"
-                           5,  # min_n: e.g. 10, the min proposed number of clusters
-                           31,  # max_n: e.g. 31, the max proposed number of clusters
+                           self.minclus,  # min_n: e.g. 10, the min proposed number of clusters
+                           self.maxclus,  # max_n: e.g. 31, the max proposed number of clusters
                            10,  # iter_n: e.g 10, the iteration times for each number of clusters
                            resample_proportion=0.6,
                            # resample_proportion: e.g 0.6, the proportion of re-sampling when computing clustering
@@ -894,8 +921,8 @@ class Cytophenograph:
                 self.tmp['UMAP_2'] = self.adata[self.adata.obs['cluster'].isin([_])].obsm['X_umap'][:, 1]
             if (self.tool == "Phenograph"):
                 self.tmp['Phenograph'] = _
-            elif (self.tool == "Parc"):
-                self.tmp['Parc'] = _
+            elif (self.tool == "VIA"):
+                self.tmp['VIA'] = _
             else:
                 self.tmp['Flowsom'] = _
             self.tmp.to_csv("/".join([self.output_folder, "".join(["CSVcluster",
@@ -1001,7 +1028,7 @@ class Cytophenograph:
         self.log.info("Part4: Output Generation")
         self.scaler = MinMaxScaler(feature_range=(0, 1))
         if self.runtime != 'umap':
-            if self.tool == "Phenograph" or self.tool == "Parc":
+            if self.tool == "Phenograph" :
                 self.adata.obs[self.tool + "_" + str(self.k_coef)] = self.adata.obs['cluster'].astype("str")
                 del self.adata.obs['cluster']
                 del self.adata.obs[self.tool + "_" + str(self.k_coef)]
@@ -1012,7 +1039,18 @@ class Cytophenograph:
                 self.adata.layers['scaled01'] =scipy.sparse.csr_matrix(self.adata.layers['scaled01'])
                 self.adata.write(
                     "/".join([self.output_folder, ".".join(["_".join([self.analysis_name, self.k_coef]), "h5ad"])]))
-            elif self.tool == "Flowsom":
+            elif self.tool == "VIA":
+                self.adata.obs[self.tool + "_" + str(self.knn)] = self.adata.obs['cluster'].astype("str")
+                del self.adata.obs['cluster']
+                del self.adata.obs[self.tool + "_" + str(self.knn)]
+                self.adata.obs["".join([str(self.tool), "_cluster"])] = self.adata.obs[
+                    "".join([str(self.tool), "_cluster"])].astype('category')
+                self.adata.layers['scaled01'] = self.scaler.fit_transform(self.adata.layers['raw_value'])
+                self.adata.X = self.adata.layers['scaled01']
+                self.adata.layers['scaled01'] =scipy.sparse.csr_matrix(self.adata.layers['scaled01'])
+                self.adata.write(
+                    "/".join([self.output_folder, ".".join(["_".join([self.analysis_name, str(self.knn)]), "h5ad"])]))
+            else:
                 del self.adata.obs['cluster']
                 self.adata.layers['scaled01'] = self.scaler.fit_transform(self.adata.layers['raw_value'])
                 self.adata.X = self.adata.layers['scaled01']

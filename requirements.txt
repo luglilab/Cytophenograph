@@ -114,3 +114,10 @@ wrapt==1.14.1
 xarray @ file:///home/conda/feedstock_root/build_artifacts/xarray_1639125986756/work
 zict @ file:///home/conda/feedstock_root/build_artifacts/zict_1651156074437/work
 zipp @ file:///home/conda/feedstock_root/build_artifacts/zipp_1649012893348/work
+
+numpy~=1.21.6
+networkx~=2.6.3
+scikit-learn~=1.0.2
+setuptools~=62.3.1
+scanorama~=1.7.1
+scipy~=1.7.3
