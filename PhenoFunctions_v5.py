@@ -33,7 +33,7 @@ warnings.filterwarnings("ignore", category=FutureWarning)
 
 class Cytophenograph:
     def __init__(self, info_file, input_folder, output_folder, k_coef, marker_list, analysis_name, thread, tool, batch,
-                 batchcov, mindist, spread, runtime, knn,resolution,minclus,maxclus):
+                 batchcov, mindist, spread, runtime, knn,resolution,minclus,maxclus,downsampling,cellnumber):
         self.info_file = info_file
         self.input_folder = input_folder
         self.output_folder = output_folder
@@ -96,6 +96,7 @@ class Cytophenograph:
         else:
             self.log.error("Error. Min_dist parameter should be between 0.1 and 1.")
             sys.exit(1)
+        self.cellnumber = cellnumber
         self.root_user = [1]
         format = logging.Formatter("%(asctime)s %(threadName)-11s %(levelname)-10s %(message)s")
         #
@@ -127,6 +128,12 @@ class Cytophenograph:
             self.log.info("Covariate selected for batch correction is: {}".format(batchcov))
         self.log.info("UMAP min_dist is: {}".format(mindist))
         self.log.info("UMAP spread is: {}".format(spread))
+        self.downsampling = downsampling
+        if self.downsampling == 'ceil' or self.downsampling == 'fixed':
+            self.cellnumber = cellnumber
+            self.log.info("Downsampling threshold: {}".format(cellnumber))
+        elif self.downsampling == 'all':
+            self.log.info("All events will be used for the analysis")
         self.palette28 = ["#08519c",  # Blue 1
          "#ff7f0e",  # Orange 1
          "#1f6836",  # Green 1
@@ -298,23 +305,13 @@ class Cytophenograph:
         for _ in range(1, num_lines + 1):
             barcode.append("_".join([names.split(".")[0], str(_)]))
         df.index = barcode
+        if self.downsampling == "ceil":
+            if self.cellnumber < df.shape[0]:
+                df.sample(n=self.cellnumber, replace=True, random_state=42)
+            else:
+                self.log.info("It was not possible to downsample because the fixed number of events is greater than the original number of events. Decrease the threshold for downsampling.")
+                pass
         return df
-    
-    #def create_fcs(self, path_csv_file):
-    #    """
-    #    create dataframe file csv
-    #    :return:
-    #    """
-    #    self.createdir("/".join([self.output_folder, "FCSsample"]))
-    #    for i in range(len(path_csv_file)):
-    #        # create df from csv
-    #        df = pd.read_csv(path_csv_file[i], header=0)
-    #        # save file name
-    #        sample_name = ".".join([os.path.basename(path_csv_file[i]).split(".")[0],"fcs"])
-    #        # export csv
-    #        fcsy.write_fcs(path="/".join([self.output_folder,"/".join(["FCSsample",
-    #                                                                   sample_name]) ]),df=df)
-
     
     def concatenate_dataframe(self, info_file, csv_list):
         """
@@ -376,7 +373,7 @@ class Cytophenograph:
                     self.adata.layers['raw_value'] = self.adata.X
                 else:
                     tmp = self.anndata_list[0]
-                    self.anndata_list.pop(0)
+                    sc.pp.subsample(tmp,n_obs=1000,random_state=42)
                     self.adata = tmp.concatenate(self.anndata_list)
                     newheader = []
                     for _ in list(self.adata.var_names):
@@ -390,6 +387,12 @@ class Cytophenograph:
             self.log.error("Error. Please check Info File Header or CSV header.")
             sys.exit(1)
         self.tmp_df = pd.DataFrame(self.adata.X, index=self.adata.obs.index)
+        if self.downsampling == "fixed":
+            if self.cellnumber < self.adata.shape[0]:
+                sc.pp.subsample(self.adata, n_obs=self.cellnumber, random_state=42)
+            else:
+                self.log.info("It was not possible to downsample because the fixed number of events is greater than the original number of events. Decrease the threshold for downsampling.")
+                pass
         return self.adata
 
     def correct_scanorama(self):
@@ -598,12 +601,14 @@ class Cytophenograph:
                 time_indicator = np.in1d(self.adata.var_names, 'remove_from_all')
                 self.adata = self.adata[:, ~ time_indicator]
                 self.adata.layers['raw_value'] = self.adata.X
+
                 return self.adata
             else:
                 self.log.info("Time channel not found. Skip QC")
         except:
             self.log.info("Impossible to complete flow_auto_qc. Check Time channel. ")
-            pass   
+            pass
+
 
     def runphenograph(self):
         """
