@@ -27,7 +27,7 @@ parser.add_option('-p', action="store", dest="pheno", default="Condition",
 parser.add_option('-r', type='choice', choices=['full', 'umap', 'clustering'],
                   dest="runtime",
                   default="full", help='Runtime option for custom analysis. The available options are full , umap , clustering ')
-parser.add_option('-s', action="store", dest="spread", default=1,type=int, help='spread parameter for UMAP generation')
+parser.add_option('-s', action="store", dest="spread", default=1,type=float, help='spread parameter for UMAP generation')
 parser.add_option('-t', action="store", dest="thread",type=int,default=1, help='Number of jobs.')
 parser.add_option('-w', action="store", dest="knn", help='Number of K-Nearest Neighbors for VIA KNN graph.Min allowed value is 5,Max allowed value is 100. Deafult value is 30',
                   type=int, default=30)
