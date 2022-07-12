@@ -106,9 +106,9 @@ class Cytophenograph:
         #
         try:
             fh = logging.FileHandler("/".join([self.output_folder, "log.txt"]), "w")
-            fh.setFormatter(format)
         except (ValueError, Exception):
             self.log.error("Error: The Output Folder Does not Exist. Please create before run the analysis.")
+        fh.setFormatter(format)
         self.log.addHandler(fh)
         self.log.info("Name of this analysis: {}".format(marker_list))
         self.log.info("Input folder: {}".format(input_folder))
