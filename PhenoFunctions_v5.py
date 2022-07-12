@@ -384,6 +384,8 @@ class Cytophenograph:
                         newheader.append(_.split(":: ")[-1])
                     self.adata.var_names = newheader
                     self.adata.layers['raw_value'] = self.adata.X
+                    print(self.adata)
+                    print(self.adata.obs['Sample'].value_counts() )
             except (ValueError, Exception):
                 self.log.error("Error. Please check Info File Header or CSV header.")
                 sys.exit(1)
@@ -651,6 +653,8 @@ class Cytophenograph:
         self.adata_subset.obs['pheno_leiden'] = self.adata_subset.obs['pheno_leiden'].astype('category')
         self.adata.obs['cluster'] = self.adata_subset.obs['pheno_leiden'].values
         self.adata.obs['Phenograph_cluster'] = self.adata_subset.obs['pheno_leiden'].values
+        print(self.adata)
+        print(self.adata.obs['Sample'].value_counts())
         if self.runtime != 'clustering':
             self.embedding = self.runumap()
             self.adata.obsm['X_umap'] = self.embedding
