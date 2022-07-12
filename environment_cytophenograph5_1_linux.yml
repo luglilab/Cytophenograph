@@ -280,7 +280,6 @@ dependencies:
     - h5py==3.6.0
     - igraph==0.9.10
     - leidenalg==0.8.10
-    - llvmlite==0.38.0
     - minisom==2.3.0
     - natsort==8.1.0
     - networkx==2.6.3
