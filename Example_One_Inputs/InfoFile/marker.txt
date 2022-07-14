@@ -1,0 +1,9 @@
+Parameter_1 :: FSC-A
+Parameter_11 :: Comp-BUV496-A :: CD3
+Parameter_13 :: Comp-BUV615-A :: CD4
+Parameter_15 :: Comp-BUV805-A :: CD8
+Parameter_18 :: Comp-BV510-A :: Aqua
+Parameter_2 :: FSC-H
+Parameter_3 :: SSC-A
+Parameter_30 :: Time
+Parameter_4 :: SSC-H
