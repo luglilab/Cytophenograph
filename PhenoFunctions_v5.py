@@ -21,6 +21,7 @@ import fcsy
 import subprocess
 import numpy as np
 import traceback
+from scipy.cluster.hierarchy import dendrogram, linkage
 matplotlib.use('Agg')
 
 from version import __version__
@@ -476,12 +477,18 @@ class Cytophenograph:
                        legend_loc='on data', title="UMAP Plot",palette=self.palette,
                        s=50, save="_legend_on_data.".join(["".join([str(self.tool), "_cluster"]), 'svg']))
             # umap obs
-            for _ in ['Sample', 'Cell_type', 'EXP', 'ID', 'Time_point', 'Condition']:
+            for _ in ['Cell_type', 'EXP', 'Time_point', 'Condition']:
                 if len(self.adata_subset.obs[_].unique()) > 1:
                     sc.pl.umap(self.adata_subset, color=_, legend_fontoutline=2, show=False, add_outline=False,
                                frameon=False,
                                title="UMAP Plot",
                                s=50, save=".".join(["_".join([str(self.tool), _]), "pdf"]))
+                    for batch in list(self.adata_subset.obs[_].unique()):
+                        sc.pl.umap(self.adata_subset, color=_, groups=[batch], na_in_legend=False,
+                                   title="UMAP Plot",
+                                   legend_fontoutline=2, show=False, add_outline=False, frameon=False,
+                                   s=50, save=".".join(["_".join([_+str(batch), _]), "pdf"])
+                                   )
             # scale data
             self.scaler = MinMaxScaler(feature_range=(0, 1))
             self.adata_subset.layers['scaled01'] = self.scaler.fit_transform(self.adata_subset.layers['raw_value'])
@@ -527,12 +534,18 @@ class Cytophenograph:
                        title=_, cmap='turbo', groups=[_],
                        save=".".join(["".join([str(self.tool), "_ALL"]), 'svg'])
                        )
-            for _ in ['Sample', 'Cell_type', 'EXP', 'ID', 'Time_point', 'Condition']:
+            for _ in ['Cell_type', 'EXP', 'Time_point', 'Condition']:
                 if len(self.adata_subset.obs[_].unique()) > 1:
                     sc.pl.umap(self.adata_subset, color=_,
                                cmap=self.palette, legend_fontoutline=2, show=False, add_outline=False, frameon=False,
                                title="UMAP Plot",
                                s=50, save=".".join(["_".join([str(self.tool), _]), "pdf"]))
+                    for batch in list(self.adata_subset.obs[_].unique()):
+                        sc.pl.umap(self.adata_subset, color=_, groups=[batch], na_in_legend=False,
+                                   title="UMAP Plot",
+                                   legend_fontoutline=2, show=False, add_outline=False, frameon=False,
+                                   s=50, save=".".join(["_".join([_+str(batch), _]), "pdf"])
+                                   )
 
         elif self.runtime == 'Clustering':
             self.createdir("/".join([self.output_folder, "".join(["Figures", self.tool])]))
@@ -886,6 +899,42 @@ class Cytophenograph:
             fig.savefig("/".join([self.outfig, ".".join(["ClusterFrequencyNotNormalized", 'svg'])]),
                         dpi=self.dpi, bbox_inches='tight',
                         format='svg')
+            self.plot_frequency_ptz()
+        else:
+            pass
+
+    def plot_frequency_ptz(self):
+        """
+
+        Returns:
+
+        """
+        if len(self.adata_subset.obs["ID"].unique()) > 1:
+            self.dfxlinkage = self.adata_subset.obs.groupby("ID")["pheno_leiden"].value_counts(
+                normalize=True).unstack() * 100
+            Z = linkage(self.dfxlinkage, 'ward')
+            dn = dendrogram(Z, get_leaves=True, orientation='left', labels=self.dfxlinkage.index)
+            mapping = {ptz: i for i, ptz in enumerate(dn['ivl'])}
+            key = self.dfxlinkage.index.map(mapping)
+
+            fig, (ax1, ax2) = plt.subplots(1, 2, constrained_layout=True, figsize=(20, 10))
+            dn = dendrogram(Z, get_leaves=True, orientation='left', ax=ax1)
+            self.dfxlinkage.iloc[key.argsort()].plot.barh(legend=False, stacked=True, ax=ax2)
+            ax1.set(yticklabels=[])
+            ax1.set(xticklabels=[])
+            ax1.grid(False)
+            ax2.tick_params(left=False)
+            ax2.grid(False)
+            ax1.axis('off')
+            ax2.set_ylabel(" ")
+            ax2.set_xlabel("Percentage Frequency")
+            ax2.legend(bbox_to_anchor=(1.2, 1.0), title='Cluster')
+            ax2.spines['top'].set_visible(False)
+            ax2.spines['right'].set_visible(False)
+            ax2.spines['left'].set_visible(False)
+            fig.savefig("/".join([self.outfig, ".".join(["SampleFrequencyClusterized", self.fileformat])]),
+                        dpi=self.dpi, bbox_inches='tight',
+                        format=self.fileformat)
         else:
             pass
 
