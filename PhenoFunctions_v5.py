@@ -20,7 +20,10 @@ from sklearn.preprocessing import MinMaxScaler
 import fcsy
 import subprocess
 import numpy as np
+import traceback
 matplotlib.use('Agg')
+
+from version import __version__
 
 
 tmp = tempfile.NamedTemporaryFile()
@@ -31,14 +34,30 @@ sc.settings.verbosity = 0
 warnings.filterwarnings("ignore", category=FutureWarning)
 
 
+class CustomFormatter(logging.Formatter):
+    FORMATS = {
+        logging.INFO: "###%(msg)s",
+        logging.WARNING: "$$$%(msg)s",
+        logging.ERROR: "@@@%(msg)s",
+        "DEFAULT": "%(msg)s",
+    }
+
+    def format(self, record):
+        log_fmt = self.FORMATS.get(record.levelno, self.FORMATS['DEFAULT'])
+        formatter = logging.Formatter(log_fmt)
+        return formatter.format(record)
+
 class Cytophenograph:
     def __init__(self, info_file, input_folder, output_folder, k_coef, marker_list, analysis_name, thread, tool, batch,
-                 batchcov, mindist, spread, runtime, knn,resolution,minclus,maxclus,downsampling,cellnumber):
+                 batchcov, mindist, spread, runtime, knn, resolution, minclus, maxclus, downsampling, cellnumber):
         self.info_file = info_file
         self.input_folder = input_folder
         self.output_folder = output_folder
+        # self.k_coef = k_coef
         self.marker_list = marker_list
-        self.analysis_name = analysis_name
+        # analysis file name 
+        import re
+        self.analysis_name = re.sub('[\W]+', '', analysis_name.replace(' ', '_'))
         self.thread = thread
         self.tool = tool
         self.tmp_df = pd.DataFrame()
@@ -62,82 +81,28 @@ class Cytophenograph:
         self.scanorama = batch
         self.batchcov = batchcov
         self.runtime = runtime
+
         if self.tool == "Phenograph":
             self.k_coef = k_coef
         if self.tool == "VIA":
-            if 10 <= int(knn) <= 100:
-                self.knn = knn
-            if 0.2 <= float(resolution) <= 1.5:
-                self.resolution = resolution
-            else:
-                self.log.error("Error. Resolution paramater should be a floting number between 0.2 and 1.5")
-                sys.exit(1)
-        if self.tool == "Flowsom":
+            self.knn = knn
+            self.resolution = resolution
+        if self.tool == "FlowSOM":
             self.minclus = minclus
             self.maxclus = maxclus
-            if int(self.minclus) > int(self.maxclus):
-                self.log.error(
-                    "Error. Flowsom Min proposed number of clusters parameter (minclus) is bigger than Flowsom Max proposed number of clusters (maxclus).")
-                sys.exit(1)
-            if int(self.maxclus) - int(self.minclus) < 2:
-                self.log.error(
-                    "Error. Flowsom Min proposed number of clusters parameter (minclus) or Flowsom Max proposed number of clusters (maxclus) are too much similar.")
-                sys.exit(1)
         self.listmarkerplot = None
         self.concatenate_fcs = None
         self.path_flowai = os.path.dirname(os.path.realpath(__file__)) + '/flowai.Rscript'
-        if 0.001 <= float(mindist) <= 1.0:
-            self.mindist = float(mindist)
-        else:
-            self.log.error("Error. Min_dist parameter should be between 0.1 and 1.")
-            sys.exit(1)
-        if 0.001 <= float(spread) <= 1.0:
-            self.spread = float(spread)
-        else:
-            self.log.error("Error. Min_dist parameter should be between 0.1 and 1.")
-            sys.exit(1)
+        self.mindist = float(mindist)
+        self.spread = float(spread)
+        self.downsampling = downsampling
         self.cellnumber = cellnumber
         self.root_user = [1]
-        format = logging.Formatter("%(asctime)s %(threadName)-11s %(levelname)-10s %(message)s")
-        #
-        ch = logging.StreamHandler(sys.stdout)
-        ch.setFormatter(format)
+
+        ch = logging.StreamHandler()
+        ch.setFormatter(CustomFormatter())
         self.log.addHandler(ch)
-        #
-        if os.path.isdir(self.output_folder):
-            fh = logging.FileHandler("/".join([self.output_folder, "log.txt"]), "w")
-        else:
-            self.log.error("Error: The Output Folder Does not Exist. Please create before run the analysis.")
-            sys.exit(1)
-        fh.setFormatter(format)
-        self.log.addHandler(fh)
-        self.log.info("Name of this analysis: {}".format(marker_list))
-        self.log.info("Input folder: {}".format(input_folder))
-        self.log.info("Output folder: {}".format(output_folder))
-        self.log.info("Info file: {}".format(info_file))
-        self.log.info("Marker list file: {}".format(marker_list))
-        self.log.info("Clustering tool option: {}".format(tool))
-        if self.tool == "Phenograph":
-            self.log.info("Phenograph K-coef: {}".format(k_coef))
-        elif self.tool == "VIA":
-            self.log.info("VIA KNN-coef: {}".format(knn))
-            self.log.info("VIA Resolution: {}".format(resolution))
-        elif self.tool == "Flowsom":
-            self.log.info("Flowsom Min proposed number of clusters: {}".format(minclus))
-            self.log.info("Flowsom Max proposed number of clusters: {}".format(maxclus))
-        else:
-            self.log.error("Error. Please select tool for clustering.Selection available are [Phenograph,VIA,Flowsom].")
-        self.log.info("Runtime option: {}".format(runtime))
-        if self.scanorama is True:
-            self.log.info("Covariate selected for batch correction is: {}".format(batchcov))
-        self.log.info("UMAP min_dist is: {}".format(mindist))
-        self.log.info("UMAP spread is: {}".format(spread))
-        self.downsampling = downsampling
-        if self.downsampling == 'ceil' or self.downsampling == 'fixed':
-            self.cellnumber = cellnumber
-            self.log.info("Downsampling threshold: {}".format(cellnumber))
-        elif self.downsampling == 'all':
-            self.log.info("All events will be used for the analysis")
+
         self.palette28 = ["#08519c",  # Blue 1
          "#ff7f0e",  # Orange 1
          "#1f6836",  # Green 1
@@ -271,6 +236,16 @@ class Cytophenograph:
             "#324E72",
         ]
 
+        if self.runtime == 'UMAP': self.tool = 'UMAP'
+
+        # self.log.info("Script name: Cytophenograph" )
+        # self.log.info("Script version: " + __version__)
+        self.log.info("Runtime: {}".format(self.runtime))
+        self.log.info("DownSampling: {}".format(self.downsampling))
+        if self.downsampling != 'All':
+            self.log.info(" >> Event Number: {}".format(self.cellnumber))
+        self.log.warning("PART 1")
+
     def read_info_file(self):
         """
         Read info file methods
@@ -294,7 +269,6 @@ class Cytophenograph:
         list_with_file_name_and_path = []
         for file_, name in zip(all_files, names):
             list_with_file_name_and_path.append(file_)
-
         return list_with_file_name_and_path
 
     def create_df(self, path_csv_file):
@@ -303,27 +277,28 @@ class Cytophenograph:
         :return:
         """
         df = pd.read_csv(path_csv_file, header=0)
+        if self.downsampling == "Balanced":
+            if self.cellnumber < df.shape[0]:
+                df = df.sample(n=int(self.cellnumber), random_state=42,
+                               ignore_index=True)
+            else:
+                self.log.info("It was not possible to downsample because the fixed number of events is greater than the original number of events. Decrease the threshold for downsampling.")
+                pass
         barcode = []
         names = os.path.basename(path_csv_file)
         num_lines = df.shape[0]
         for _ in range(1, num_lines + 1):
             barcode.append("_".join([names.split(".")[0], str(_)]))
         df.index = barcode
-        if self.downsampling == "ceil":
-            if self.cellnumber < df.shape[0]:
-                df.sample(n=self.cellnumber, replace=True, random_state=42)
-            else:
-                self.log.info("It was not possible to downsample because the fixed number of events is greater than the original number of events. Decrease the threshold for downsampling.")
-                pass
         return df
-    
+
     def concatenate_dataframe(self, info_file, csv_list):
         """
 
         :param csv_list:
         :return:
         """
-        self.log.info("Part1: Files concatenation")
+        self.log.info("Files concatenation")
         # create empy list for save several df
         pandas_df_list = []
         # create list with anndata object
@@ -345,8 +320,7 @@ class Cytophenograph:
                         ann_tmp.obs['Sample'] = pandas_df_list[i].index[0][:-2]
                         #
                         cell_type = info_file['Cell_type'].loc[info_file['Sample'] == pandas_df_list[i].index[0][:-2]]
-                        ann_tmp.obs['Cell_type'] = ''.join(
-                            e for e in cell_type.to_string().split(" ")[-1] if e.isalnum())
+                        ann_tmp.obs['Cell_type'] = ''.join(e for e in cell_type.to_string().split(" ")[-1] if e.isalnum())
                         #
                         exp = info_file['EXP'].loc[info_file['Sample'] == pandas_df_list[i].index[0][:-2]]
                         ann_tmp.obs['EXP'] = ''.join(e for e in exp.to_string().split(" ")[-1] if e.isalnum())
@@ -356,36 +330,30 @@ class Cytophenograph:
                         #
                         time_point = info_file['Time_point'].loc[info_file['Sample'] == pandas_df_list[i].index[0][:-2]]
                         # ann_tmp.obs['Time_point'] = time_point.to_string().split(" ")[-1]
-                        ann_tmp.obs['Time_point'] = ''.join(
-                            e for e in time_point.to_string().split(" ")[-1] if e.isalnum())
+                        ann_tmp.obs['Time_point'] = ''.join(e for e in time_point.to_string().split(" ")[-1] if e.isalnum())
                         #
 
                         condition = info_file['Condition'].loc[info_file['Sample'] == pandas_df_list[i].index[0][:-2]]
-                        ann_tmp.obs['Condition'] = ''.join(
-                            e for e in condition.to_string().split(" ")[-1] if e.isalnum())
+                        ann_tmp.obs['Condition'] = ''.join(e for e in condition.to_string().split(" ")[-1] if e.isalnum())
                         #
                         count = info_file['Count'].loc[info_file['Sample'] == pandas_df_list[i].index[0][:-2]]
                         ann_tmp.obs['Count'] = ''.join(e for e in count.to_string().split(" ")[-1] if e.isalnum())
                         self.anndata_list.append(ann_tmp)
                     else:
-                        self.log.error(
-                            "Error, this file {0} is not in the column Sample of Infofile. \n Please check sample name and Infofile".format(
-                                pandas_df_list[i].index[0][:-2]))
+                        self.log.error("Error, this file {0} is not in the column Sample of Infofile.\nPlease check sample name and Infofile".format(pandas_df_list[i].index[0][:-2]))
                         sys.exit(1)
                 if len(self.anndata_list) == 0:
                     self.adata = self.anndata_list[0]
                     self.adata.layers['raw_value'] = self.adata.X
                 else:
                     tmp = self.anndata_list[0]
-                    sc.pp.subsample(tmp,n_obs=1000,random_state=42)
+                    self.anndata_list.pop(0)
                     self.adata = tmp.concatenate(self.anndata_list)
                     newheader = []
                     for _ in list(self.adata.var_names):
                         newheader.append(_.split(":: ")[-1])
                     self.adata.var_names = newheader
                     self.adata.layers['raw_value'] = self.adata.X
-                    print(self.adata)
-                    print(self.adata.obs['Sample'].value_counts() )
             except (ValueError, Exception):
                 self.log.error("Error. Please check Info File Header or CSV header.")
                 sys.exit(1)
@@ -393,12 +361,13 @@ class Cytophenograph:
             self.log.error("Error. Please check Info File Header or CSV header.")
             sys.exit(1)
         self.tmp_df = pd.DataFrame(self.adata.X, index=self.adata.obs.index)
-        if self.downsampling == "fixed":
+        if self.downsampling == "Fixed":
             if self.cellnumber < self.adata.shape[0]:
                 sc.pp.subsample(self.adata, n_obs=self.cellnumber, random_state=42)
             else:
                 self.log.info("It was not possible to downsample because the fixed number of events is greater than the original number of events. Decrease the threshold for downsampling.")
                 pass
+        self.log.info("{0} cells undergo to clustering analysis".format(self.adata.shape[0]))
         return self.adata
 
     def correct_scanorama(self):
@@ -435,8 +404,7 @@ class Cytophenograph:
             markerfilename = os.path.split(self.marker_list)[1]
             return markerfilepath, markerfilename
         else:
-            print("File does not exist. Exit")
-            self.log.error("File does not exist. Exit")
+            self.log.error("File does not exist.")
             sys.exit(1)
 
     def checkmarkers(self):
@@ -450,13 +418,11 @@ class Cytophenograph:
         for _ in self.marker_array:
             newmarker.append(_.split(":: ")[-1])
         self.marker_array = newmarker
-        print(self.marker_array)
         # read concatenate file
         for i in range(len(self.marker_array)):
             if self.marker_array[i] in self.adata.var_names.to_list():
                 continue
             else:
-                print("Marker {} not found in Matrix.".format(self.marker_array[i]))
                 self.log.error("Marker {} not found in Matrix.".format(self.marker_array[i]))
                 sys.exit(1)
         return self.marker_array
@@ -474,19 +440,20 @@ class Cytophenograph:
         Function that perform UMAP dimensional reduction
         return: embedding
         """
-        if self.runtime != 'clustering':
-            self.log.info("Part3: UMAP (Uniform Manifold Approximation and Projection) generation")
+        self.log.warning("PART 3")
+        if self.runtime != 'Clustering':
+            self.log.info("UMAP (Uniform Manifold Approximation and Projection) generation")
             reducer = umap.UMAP(random_state=42, n_neighbors=self.n_neighbors, min_dist=self.mindist, spread=1.0)
             embedding = reducer.fit_transform(self.adata_subset.X)
             return embedding
         else:
-            self.log.info("Part3: skipping UMAP (Uniform Manifold Approximation and Projection) generation")
+            self.log.info("Skipping UMAP (Uniform Manifold Approximation and Projection) generation")
 
     def plot_umap(self):
         """
         Function per generation of pdf files with umap plot
         """
-        if self.runtime == 'full':
+        if self.runtime == 'Full':
             self.createdir("/".join([self.output_folder, "".join(["Figures", self.tool])]))
             self.outfig = "/".join([self.output_folder, "".join(["Figures", self.tool])])
             sc.settings.figdir = self.outfig
@@ -504,6 +471,10 @@ class Cytophenograph:
                        legend_fontoutline=2, show=False, add_outline=False, frameon=False,
                        legend_loc='on data', title="UMAP Plot",palette=self.palette,
                        s=50, save="_legend_on_data.".join(["".join([str(self.tool), "_cluster"]), self.fileformat]))
+            sc.pl.umap(self.adata_subset, color="pheno_leiden",
+                       legend_fontoutline=2, show=False, add_outline=False, frameon=False,
+                       legend_loc='on data', title="UMAP Plot",palette=self.palette,
+                       s=50, save="_legend_on_data.".join(["".join([str(self.tool), "_cluster"]), 'svg']))
             # umap obs
             for _ in ['Sample', 'Cell_type', 'EXP', 'ID', 'Time_point', 'Condition']:
                 if len(self.adata_subset.obs[_].unique()) > 1:
@@ -527,16 +498,16 @@ class Cytophenograph:
                                title=_, cmap='turbo', groups=[_],
                                save=".".join([''.join(e for e in _ if e.isalnum()), self.fileformat])
                                )
-            self.listmarkerplot = ['pheno_leiden']
-            for _ in range(len(list(self.adata_subset.var_names))):
-                self.listmarkerplot.append(list(self.adata_subset.var_names)[_])
-            sc.pl.umap(self.adata_subset, color=self.listmarkerplot, show=False, layer="scaled01",
-                       legend_fontoutline=1, na_in_legend=False, s=30, cmap='turbo',
-                       save=".".join(["".join([str(self.tool), "_all"]), self.fileformat])
-                       )
-        elif self.runtime == 'umap':
-            self.createdir("/".join([self.output_folder, "".join(["Figures", "_runtimeUMAP"])]))
-            self.outfig = "/".join([self.output_folder, "".join(["Figures", "_runtimeUMAP"])])
+            # self.listmarkerplot = ['pheno_leiden']
+            # for _ in range(len(list(self.adata_subset.var_names))):
+                # self.listmarkerplot.append(list(self.adata_subset.var_names)[_])
+            # sc.pl.umap(self.adata_subset, color=self.listmarkerplot, show=False, layer="scaled01",
+                       # legend_fontoutline=1, na_in_legend=False, s=30, cmap='turbo',
+                       # save=".".join(["".join([str(self.tool), "_ALL"]), self.fileformat])
+                       # )
+        elif self.runtime == 'UMAP':
+            self.createdir("/".join([self.output_folder, "".join(["Figures", self.tool])]))
+            self.outfig = "/".join([self.output_folder, "".join(["Figures", self.tool])])
             sc.settings.figdir = self.outfig
             scaler = MinMaxScaler(feature_range=(0, 1))
             self.adata_subset.layers['scaled01'] = scaler.fit_transform(self.adata_subset.layers['raw_value'])
@@ -549,7 +520,12 @@ class Cytophenograph:
             sc.pl.umap(self.adata_subset, color=list(self.adata_subset.var_names), show=False, layer="scaled01",
                        legend_fontoutline=1, na_in_legend=False, s=30,
                        title=_, cmap='turbo', groups=[_],
-                       save=".".join(["".join([str(self.tool), "_all"]), self.fileformat])
+                       save=".".join(["".join([str(self.tool), "_ALL"]), self.fileformat])
+                       )
+            sc.pl.umap(self.adata_subset, color=list(self.adata_subset.var_names), show=False, layer="scaled01",
+                       legend_fontoutline=1, na_in_legend=False, s=30,
+                       title=_, cmap='turbo', groups=[_],
+                       save=".".join(["".join([str(self.tool), "_ALL"]), 'svg'])
                        )
             for _ in ['Sample', 'Cell_type', 'EXP', 'ID', 'Time_point', 'Condition']:
                 if len(self.adata_subset.obs[_].unique()) > 1:
@@ -558,7 +534,7 @@ class Cytophenograph:
                                title="UMAP Plot",
                                s=50, save=".".join(["_".join([str(self.tool), _]), "pdf"]))
 
-        elif self.runtime == 'clustering':
+        elif self.runtime == 'Clustering':
             self.createdir("/".join([self.output_folder, "".join(["Figures", self.tool])]))
             self.outfig = "/".join([self.output_folder, "".join(["Figures", self.tool])])
 
@@ -567,11 +543,15 @@ class Cytophenograph:
         Function for the generation of matrixplot sc.pl.matrixplot
         return:
         """
-        if self.runtime != 'umap':
+        if self.runtime != 'UMAP':
             sc.pl.matrixplot(self.adata_subset, list(self.adata_subset.var_names), "pheno_leiden",
                              dendrogram=True, vmin=-2, vmax=2, cmap='RdBu_r', layer="scaled",
                              show=False, swap_axes=False, return_fig=False,
                              save=".".join(["matrixplot_mean_z_score", self.fileformat]))
+            sc.pl.matrixplot(self.adata_subset, list(self.adata_subset.var_names), "pheno_leiden",
+                             dendrogram=True, vmin=-2, vmax=2, cmap='RdBu_r', layer="scaled",
+                             show=False, swap_axes=False, return_fig=False,
+                             save=".".join(["matrixplot_mean_z_score", 'svg']))
             sc.pl.matrixplot(self.adata_subset, list(self.adata_subset.var_names), "pheno_leiden",
                              dendrogram=True, cmap='Blues', standard_scale='var',
                              colorbar_title='column scaled\nexpression', layer="scaled",
@@ -586,7 +566,7 @@ class Cytophenograph:
     
         """
         try:
-            self.log.info("Perform flow_auto_qc with FlowAI tool.")
+            self.log.info("Perform Flow Auto QC with FlowAI tool.")
             df = pd.DataFrame(self.adata.X, columns=self.adata.var.index, index=self.adata.obs.index)
             df1 = pd.DataFrame(self.adata.X, columns=self.adata.var.index, index=self.adata.obs.index)
             self.concatenate_fcs = "/".join([self.output_folder,
@@ -607,28 +587,31 @@ class Cytophenograph:
                 time_indicator = np.in1d(self.adata.var_names, 'remove_from_all')
                 self.adata = self.adata[:, ~ time_indicator]
                 self.adata.layers['raw_value'] = self.adata.X
-
                 return self.adata
             else:
-                self.log.info("Time channel not found. Skip QC")
+                # self.log.info("Time channel not found. Skip QC")
+                pass
         except:
-            self.log.info("Impossible to complete flow_auto_qc. Check Time channel. ")
+            # self.log.info("Impossible to complete Flow Auto QC. Check Time channel.")
             pass
-
 
     def runphenograph(self):
         """
         Function for execution of phenograph analysis
         :return:
         """
-        self.log.info("Part2: Phenograph Clustering")
+        self.log.warning("PART 2")
+        self.log.info("Phenograph Clustering")
         self.createfcs()
         self.log.info("Markers used for Phenograph clustering:")
+        for i in self.markertoinclude:
+            self.log.info(" + " + i)
         self.adata_subset = self.adata[:, self.markertoinclude].copy()
-        self.log.info(self.adata_subset.var_names)
-        self.log.info("Markers excluded for Phenograph clustering:")
-        self.log.info(self.marker_array)
-        if self.runtime != 'clustering':
+        if len(self.marker_array):
+            self.log.info("Markers excluded for Phenograph clustering:")
+        for i in self.marker_array:
+            self.log.info(" - " + i)
+        if self.runtime != 'Clustering':
             if self.scanorama is True:
                 self.adata_subset = self.correct_scanorama()
             else:
@@ -653,9 +636,7 @@ class Cytophenograph:
         self.adata_subset.obs['pheno_leiden'] = self.adata_subset.obs['pheno_leiden'].astype('category')
         self.adata.obs['cluster'] = self.adata_subset.obs['pheno_leiden'].values
         self.adata.obs['Phenograph_cluster'] = self.adata_subset.obs['pheno_leiden'].values
-        print(self.adata)
-        print(self.adata.obs['Sample'].value_counts())
-        if self.runtime != 'clustering':
+        if self.runtime != 'Clustering':
             self.embedding = self.runumap()
             self.adata.obsm['X_umap'] = self.embedding
             self.adata_subset.obsm['X_umap'] = self.embedding
@@ -670,14 +651,18 @@ class Cytophenograph:
         function for execution of
         :return:
         """
-        self.log.info("Part2: VIA Clustering")
+        self.log.warning("PART 2")
+        self.log.info("VIA Clustering")
         self.createfcs()
         self.log.info("Markers used for VIA clustering:")
+        for i in self.markertoinclude:
+            self.log.info(" + " + i)
         self.adata_subset = self.adata[:, self.markertoinclude].copy()
-        self.log.info(self.adata_subset.var_names)
-        self.log.info("Markers excluded for Phenograph clustering:")
-        self.log.info(self.marker_array)
-        if self.runtime != 'clustering':
+        if len(self.marker_array):
+            self.log.info("Markers excluded for VIA clustering:")
+        for i in self.marker_array:
+            self.log.info(" - " + i)
+        if self.runtime != 'Clustering':
             if self.scanorama is True:
                 self.adata_subset = self.correct_scanorama()
             else:
@@ -691,9 +676,9 @@ class Cytophenograph:
                 self.adata_subset.layers['scaled'] = sc.pp.scale(self.adata_subset, max_value=6,
                                                                  zero_center=True, copy=True).X
                 self.adata_subset.X = self.adata_subset.layers['scaled']
-        p = via.VIA(self.adata_subset.X, random_seed=42, knn=int(self.knn),root_user=self.root_user,
+        p = via.VIA(self.adata_subset.X, random_seed=42, knn=int(self.knn), root_user=self.root_user,
                       jac_std_global='median', jac_weighted_edges=False, distance='l2',
-                      small_pop=10,resolution_parameter=self.resolution,
+                      small_pop=10, resolution_parameter=self.resolution,
                       num_threads=int(self.thread))
         p.run_VIA()
         self.adata_subset.obs['pheno_leiden'] = [str(i) for i in p.labels]
@@ -701,7 +686,7 @@ class Cytophenograph:
         self.adata_subset.obs['pheno_leiden'] = self.adata_subset.obs['pheno_leiden'].astype('category')
         self.adata.obs['cluster'] = self.adata_subset.obs['pheno_leiden'].values
         self.adata.obs['VIA_cluster'] = self.adata_subset.obs['pheno_leiden'].values
-        if self.runtime != 'clustering':
+        if self.runtime != 'Clustering':
             self.embedding = self.runumap()
             self.adata.obsm['X_umap'] = self.embedding
             self.adata_subset.obsm['X_umap'] = self.embedding
@@ -716,13 +701,17 @@ class Cytophenograph:
         function for execution of
         :return:
         """
-        self.log.info("Part2: Flowsom Clustering")
-        self.log.info("Markers used for Flowsom clustering:")
-        self.log.info(self.markertoinclude)
-        self.log.info("Markers excluded for Flowsom clustering:")
-        self.log.info(self.marker_array)
+        self.log.warning("PART 2")
+        self.log.info("FlowSOM Clustering")
         self.createfcs()
-        if self.runtime != 'clustering':
+        self.log.info("Markers used for FlowSOM clustering:")
+        for i in self.markertoinclude:
+            self.log.info(" + " + i)
+        if len(self.marker_array):
+            self.log.info("Markers excluded for FlowSOM clustering:")
+        for i in self.marker_array:
+            self.log.info(" - " + i)
+        if self.runtime != 'Clustering':
             if self.scanorama is True:
                 self.adata_subset = self.correct_scanorama()
             else:
@@ -783,7 +772,7 @@ class Cytophenograph:
         #
         self.adata_subset.X = self.adata_subset.layers['scaled']
         self.embedding = self.runumap()
-        if self.runtime != 'clustering':
+        if self.runtime != 'Clustering':
             self.adata.obsm['X_umap'] = self.embedding
             self.adata_subset.obsm['X_umap'] = self.embedding
             for _ in list(self.adata_subset.obs['pheno_leiden'].unique()):
@@ -800,7 +789,7 @@ class Cytophenograph:
         """
 
         """
-        if self.runtime == 'full':
+        if self.runtime == 'Full':
             self.tmp_df = pd.merge(pd.DataFrame(self.adata.X,
                                                 columns=self.adata.var_names,
                                                 index=self.adata.obs.index).astype(int),
@@ -813,11 +802,8 @@ class Cytophenograph:
                                                   'EXP',
                                                   'ID', 'Time_point',
                                                   'Condition']], left_index=True,
-                     right_index=True).to_csv("/".join([self.output_folder,
-                                                        "_ConcatenatedCells.".join(["_".join([self.analysis_name]),
-                                                                                    "csv"])]),
-                                              header=True, index=False)
-        elif self.runtime == 'umap':
+                     right_index=True).to_csv("/".join([self.output_folder, ".".join([self.analysis_name, "csv"])]), header=True, index=False)
+        elif self.runtime == 'UMAP':
             self.tmp_df = pd.merge(pd.DataFrame(self.adata.X,
                                                 columns=self.adata.var_names,
                                                 index=self.adata.obs.index).astype(int),
@@ -829,11 +815,8 @@ class Cytophenograph:
                                                   'EXP',
                                                   'ID', 'Time_point',
                                                   'Condition']], left_index=True,
-                     right_index=True).to_csv("/".join([self.output_folder,
-                                                        "_ConcatenatedCells.".join(["_".join([self.analysis_name]),
-                                                                                    "csv"])]),
-                                              header=True, index=False)
-        elif self.runtime == 'clustering':
+                     right_index=True).to_csv("/".join([self.output_folder, ".".join([self.analysis_name, "csv"])]), header=True, index=False)
+        elif self.runtime == 'Clustering':
             self.tmp_df = pd.merge(pd.DataFrame(self.adata.X,
                                                 columns=self.adata.var_names,
                                                 index=self.adata.obs.index).astype(int),
@@ -843,16 +826,13 @@ class Cytophenograph:
                                                    'Condition']],
                                    right_index=True,
                                    left_index=True)
-            self.tmp_df.to_csv("/".join([self.output_folder,
-                                         "_ConcatenatedCells.".join(["_".join([self.analysis_name]),
-                                                                     "csv"])]),
-                               header=True, index=False)
+            self.tmp_df.to_csv("/".join([self.output_folder, ".".join([self.analysis_name, "csv"])]), header=True, index=False)
 
     def plot_frequency(self):
         """
         Plot barplot with frequency
         """
-        if self.runtime != 'umap':
+        if self.runtime != 'UMAP':
             fig, (ax1) = plt.subplots(1, 1, figsize=(17 / 2.54, 17 / 2.54))
             ax1 = self.adata_subset.obs.groupby("pheno_leiden")["Sample"].value_counts(
                 normalize=True).unstack().plot.barh(
@@ -867,6 +847,9 @@ class Cytophenograph:
             fig.savefig("/".join([self.outfig, ".".join(["ClusterFrequencyNormalized", self.fileformat])]),
                         dpi=self.dpi, bbox_inches='tight',
                         format=self.fileformat)
+            fig.savefig("/".join([self.outfig, ".".join(["ClusterFrequencyNormalized", 'svg'])]),
+                        dpi=self.dpi, bbox_inches='tight',
+                        format='svg')
             #
             for _ in ['Sample', 'Cell_type', 'EXP', 'ID', 'Time_point', 'Condition']:
                 if len(self.adata_subset.obs[_].unique()) > 1:
@@ -882,11 +865,9 @@ class Cytophenograph:
                     ax3.set_ylabel(_)
                     ax3.grid(False)
                     ax3.legend(bbox_to_anchor=(1.2, 1.0))
-                    fig.savefig("/".join([self.outfig, ".".join(["".join([_, "ClusterFrequencyNormalized"]),
-                                                                 self.fileformat])]),
+                    fig.savefig("/".join([self.outfig, ".".join(["".join([_, "ClusterFrequencyNormalized"]), self.fileformat])]),
                                 dpi=self.dpi, bbox_inches='tight',
                                 format=self.fileformat)
-
             #
             fig, (ax2) = plt.subplots(1, 1, figsize=(17 / 2.54, 17 / 2.54))
             ax2 = self.adata_subset.obs.groupby("pheno_leiden")["Sample"].value_counts(
@@ -902,6 +883,9 @@ class Cytophenograph:
             fig.savefig("/".join([self.outfig, ".".join(["ClusterFrequencyNotNormalized", self.fileformat])]),
                         dpi=self.dpi, bbox_inches='tight',
                         format=self.fileformat)
+            fig.savefig("/".join([self.outfig, ".".join(["ClusterFrequencyNotNormalized", 'svg'])]),
+                        dpi=self.dpi, bbox_inches='tight',
+                        format='svg')
         else:
             pass
 
@@ -913,11 +897,6 @@ class Cytophenograph:
         """
         if not os.path.exists(dirpath):
             os.mkdir(dirpath)
-            print(" ".join(["Directory", dirpath.split("/")[-1], "Created"]))
-            self.log.info(" ".join(["Directory", dirpath.split("/")[-1], "Created"]))
-        else:
-            print(" ".join(["Directory", dirpath.split("/")[-1], "already exists"]))
-            self.log.info(" ".join(["Directory", dirpath.split("/")[-1], "already exists"]))
 
     def groupbycluster(self):
         """
@@ -931,7 +910,7 @@ class Cytophenograph:
         for _ in range(self.adata.obs['cluster'].unique().min(), self.adata.obs['cluster'].unique().max() + 1):
             self.tmp = self.adata[self.adata.obs['cluster'].isin([_])].to_df()
             self.tmp = self.tmp.astype(int)
-            if self.runtime == 'full':
+            if self.runtime == 'Full':
                 self.tmp['UMAP_1'] = self.adata[self.adata.obs['cluster'].isin([_])].obsm['X_umap'][:, 0]
                 self.tmp['UMAP_2'] = self.adata[self.adata.obs['cluster'].isin([_])].obsm['X_umap'][:, 1]
             if (self.tool == "Phenograph"):
@@ -939,11 +918,8 @@ class Cytophenograph:
             elif (self.tool == "VIA"):
                 self.tmp['VIA'] = _
             else:
-                self.tmp['Flowsom'] = _
-            self.tmp.to_csv("/".join([self.output_folder, "".join(["CSVcluster",
-                                                                   self.tool]), "".join([self.analysis_name, "_",
-                                                                                         str(_), ".csv"])]),
-                            header=True, index=False)
+                self.tmp['FlowSOM'] = _
+            self.tmp.to_csv("/".join([self.output_folder, "".join(["CSVcluster", self.tool]), "".join([self.analysis_name, "_", str(_), ".csv"])]), header=True, index=False)
 
     def groupbysample(self):
         """
@@ -956,14 +932,14 @@ class Cytophenograph:
         self.tmp = self.tmp.astype(int)
         # change index
         self.tmp.set_index(self.adata.obs['Sample'], inplace=True)
-        if self.runtime != 'umap':
+        if self.runtime != 'UMAP':
             self.adata.obs['cluster'] = self.adata.obs['cluster'].astype(int)
-            self.createdir("/".join([self.output_folder, "".join(["Cluster_frequency", self.tool])]))
+            self.createdir("/".join([self.output_folder, "".join(["ClusterFrequency", self.tool])]))
         # create columns
-        if self.runtime != 'clustering':
+        if self.runtime != 'Clustering':
             self.tmp['UMAP_1'] = self.adata.obsm['X_umap'][:, 0]
             self.tmp['UMAP_2'] = self.adata.obsm['X_umap'][:, 1]
-        if self.runtime != 'umap':
+        if self.runtime != 'UMAP':
             self.tmp[self.tool] = self.adata.obs['cluster'].values
             self.tmp["cluster"] = self.adata.obs['cluster'].values
             # get unique filenames
@@ -980,8 +956,8 @@ class Cytophenograph:
             dfCounts = dfCounts * 100
             # save
             dfCounts.index.name = 'Cluster'
-            dfCounts.to_csv("/".join(["/".join([self.output_folder, "".join(["Cluster_frequency", self.tool])]),
-                                      "".join(["Tot_percentage", ".csv"])]))
+            dfCounts.to_csv("/".join(["/".join([self.output_folder, "".join(["ClusterFrequency", self.tool])]),
+                                      "".join(["TotalPercentage", ".csv"])]))
             # create empty dataframe
             dfCounts = pd.DataFrame(index=range(min(unique_Phenograph), max(unique_Phenograph) + 1))
             # generate Tot_counts file
@@ -990,8 +966,8 @@ class Cytophenograph:
                     self.tmp.cluster.unique(), fill_value=0)
             # save
             dfCounts.index.name = 'Cluster'
-            dfCounts.to_csv("/".join(["/".join([self.output_folder, "".join(["Cluster_frequency", self.tool])]),
-                                      "".join(["Tot_counts", ".csv"])]))
+            dfCounts.to_csv("/".join(["/".join([self.output_folder, "".join(["ClusterFrequency", self.tool])]),
+                                      "".join(["TotalCounts", ".csv"])]))
             del self.tmp['cluster']
             # save samples
             for i in range(len(unique_filename)):
@@ -1014,12 +990,17 @@ class Cytophenograph:
         Function for execution of phenograph analysis
         :return:
         """
-        self.log.info("Part2: UMAP dimensional reduction")
-        # self.log.info("Markers used for Phenograph clustering:")
+        self.log.warning("PART 2")
+        self.log.info("UMAP Dimensional Reduction")
+
+        self.log.info("Markers used for UMAP computation:")
+        for i in self.markertoinclude:
+            self.log.info(" + " + i)
         self.adata_subset = self.adata[:, self.markertoinclude].copy()
-        self.log.info(self.adata_subset.var_names)
-        self.log.info("Markers excluded for UMAP computation:")
-        self.log.info(self.marker_array)
+        if len(self.marker_array):
+            self.log.info("Markers excluded for UMAP computation:")
+        for i in self.marker_array:
+            self.log.info(" - " + i)
         self.adata_subset.layers['scaled'] = sc.pp.scale(self.adata_subset, max_value=6,
                                                          zero_center=True, copy=True).X
         #self.adata_subset.X = self.adata_subset.layers['scaled']
@@ -1040,10 +1021,11 @@ class Cytophenograph:
         """
         Export to h5ad file.
         """
-        self.log.info("Part4: Output Generation")
+        self.log.warning("PART 4")
+        self.log.info("Output Generation")
         self.scaler = MinMaxScaler(feature_range=(0, 1))
-        if self.runtime != 'umap':
-            if self.tool == "Phenograph" :
+        if self.runtime != 'UMAP':
+            if self.tool == "Phenograph":
                 self.adata.obs[self.tool + "_" + str(self.k_coef)] = self.adata.obs['cluster'].astype("str")
                 del self.adata.obs['cluster']
                 del self.adata.obs[self.tool + "_" + str(self.k_coef)]
@@ -1052,8 +1034,7 @@ class Cytophenograph:
                 self.adata.layers['scaled01'] = self.scaler.fit_transform(self.adata.layers['raw_value'])
                 self.adata.X = self.adata.layers['scaled01']
                 self.adata.layers['scaled01'] =scipy.sparse.csr_matrix(self.adata.layers['scaled01'])
-                self.adata.write(
-                    "/".join([self.output_folder, ".".join(["_".join([self.analysis_name, self.k_coef]), "h5ad"])]))
+                self.adata.write("/".join([self.output_folder, ".".join([self.analysis_name, "h5ad"])]))
             elif self.tool == "VIA":
                 self.adata.obs[self.tool + "_" + str(self.knn)] = self.adata.obs['cluster'].astype("str")
                 del self.adata.obs['cluster']
@@ -1062,17 +1043,17 @@ class Cytophenograph:
                     "".join([str(self.tool), "_cluster"])].astype('category')
                 self.adata.layers['scaled01'] = self.scaler.fit_transform(self.adata.layers['raw_value'])
                 self.adata.X = self.adata.layers['scaled01']
-                self.adata.layers['scaled01'] =scipy.sparse.csr_matrix(self.adata.layers['scaled01'])
-                self.adata.write(
-                    "/".join([self.output_folder, ".".join(["_".join([self.analysis_name, str(self.knn)]), "h5ad"])]))
+                self.adata.layers['scaled01'] = scipy.sparse.csr_matrix(self.adata.layers['scaled01'])
+                self.adata.write("/".join([self.output_folder, ".".join([self.analysis_name, "h5ad"])]))
             else:
                 del self.adata.obs['cluster']
                 self.adata.layers['scaled01'] = self.scaler.fit_transform(self.adata.layers['raw_value'])
                 self.adata.X = self.adata.layers['scaled01']
                 self.adata.layers['scaled01'] = scipy.sparse.csr_matrix(self.adata.layers['scaled01'])
-                self.adata.write("/".join([self.output_folder, ".".join(["_".join([self.analysis_name]), "h5ad"])]))
+                self.adata.write("/".join([self.output_folder, ".".join([self.analysis_name, "h5ad"])]))
         else:
             self.adata.layers['scaled01'] = self.scaler.fit_transform(self.adata.layers['raw_value'])
             self.adata.X = self.adata.layers['scaled01']
             self.adata.layers['scaled01'] = scipy.sparse.csr_matrix(self.adata.layers['scaled01'])
-            self.adata.write("/".join([self.output_folder, ".".join(["_".join([self.analysis_name]), "h5ad"])]))
+            self.adata.write("/".join([self.output_folder, ".".join([self.analysis_name, "h5ad"])]))
+        self.log.warning("PART 5")
