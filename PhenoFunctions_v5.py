@@ -930,7 +930,8 @@ class Cytophenograph:
             dn = dendrogram(Z, get_leaves=True, orientation='left', labels=self.dfxlinkage.index,
                             no_plot=True)
             fig, (ax1, ax2) = plt.subplots(1, 2, constrained_layout=True, figsize=(20, 10))
-            dn = dendrogram(Z, get_leaves=True, orientation='left', labels=self.dfxlinkage.index, ax=ax1)
+            dn = dendrogram(Z, get_leaves=True, orientation='left', labels=self.dfxlinkage.index,
+                            color_threshold=0, above_threshold_color='k', ax=ax1)
             self.dfxlinkage.loc[dn['ivl']].plot.barh(legend=False, stacked=True, ax=ax2, color=self.palette)
             ax1.set(yticklabels=[])
             ax1.set(xticklabels=[])
