@@ -444,7 +444,7 @@ class Cytophenograph:
         self.log.warning("PART 3")
         if self.runtime != 'Clustering':
             self.log.info("UMAP (Uniform Manifold Approximation and Projection) generation")
-            reducer = umap.UMAP(random_state=42, n_neighbors=self.n_neighbors, min_dist=self.mindist, spread=1.0)
+            reducer = umap.UMAP(random_state=42, n_neighbors=self.n_neighbors, min_dist=self.mindist, spread=self.spread)
             embedding = reducer.fit_transform(self.adata_subset.X)
             return embedding
         else:
@@ -477,18 +477,23 @@ class Cytophenograph:
                        legend_loc='on data', title="UMAP Plot",palette=self.palette,
                        s=50, save="_legend_on_data.".join(["".join([str(self.tool), "_cluster"]), 'svg']))
             # umap obs
-            for _ in ['Cell_type', 'EXP', 'Time_point', 'Condition']:
+            for _ in ['Sample','Cell_type', 'EXP', 'ID', 'Time_point', 'Condition']:
                 if len(self.adata_subset.obs[_].unique()) > 1:
                     sc.pl.umap(self.adata_subset, color=_, legend_fontoutline=2, show=False, add_outline=False,
                                frameon=False,
                                title="UMAP Plot",
                                s=50, save=".".join(["_".join([str(self.tool), _]), "pdf"]))
+                else:
+                    continue
+            for _ in ['Cell_type', 'EXP', 'Time_point', 'Condition']:
+                if len(self.adata_subset.obs[_].unique()) > 1:
                     for batch in list(self.adata_subset.obs[_].unique()):
                         sc.pl.umap(self.adata_subset, color=_, groups=[batch], na_in_legend=False,
                                    title="UMAP Plot",
                                    legend_fontoutline=2, show=False, add_outline=False, frameon=False,
-                                   s=50, save=".".join(["_".join([_+str(batch), _]), "pdf"])
-                                   )
+                                   s=50, save=".".join(["_".join([_+str(batch), _]), "pdf"]) )
+                else:
+                    continue
             # scale data
             self.scaler = MinMaxScaler(feature_range=(0, 1))
             self.adata_subset.layers['scaled01'] = self.scaler.fit_transform(self.adata_subset.layers['raw_value'])
@@ -524,28 +529,34 @@ class Cytophenograph:
                            title=_, cmap='turbo', groups=[_],
                            save=".".join([''.join(e for e in _ if e.isalnum()), self.fileformat])
                            )
-            sc.pl.umap(self.adata_subset, color=list(self.adata_subset.var_names), show=False, layer="scaled01",
-                       legend_fontoutline=1, na_in_legend=False, s=30,
-                       title=_, cmap='turbo', groups=[_],
-                       save=".".join(["".join([str(self.tool), "_ALL"]), self.fileformat])
-                       )
-            sc.pl.umap(self.adata_subset, color=list(self.adata_subset.var_names), show=False, layer="scaled01",
-                       legend_fontoutline=1, na_in_legend=False, s=30,
-                       title=_, cmap='turbo', groups=[_],
-                       save=".".join(["".join([str(self.tool), "_ALL"]), 'svg'])
-                       )
-            for _ in ['Cell_type', 'EXP', 'Time_point', 'Condition']:
+            # sc.pl.umap(self.adata_subset, color=list(self.adata_subset.var_names), show=False, layer="scaled01",
+            #            legend_fontoutline=1, na_in_legend=False, s=30,
+            #            title=_, cmap='turbo', groups=[_],
+            #            save=".".join(["".join([str(self.tool), "_ALL"]), self.fileformat])
+            #            )
+            # sc.pl.umap(self.adata_subset, color=list(self.adata_subset.var_names), show=False, layer="scaled01",
+            #            legend_fontoutline=1, na_in_legend=False, s=30,
+            #            title=_, cmap='turbo', groups=[_],
+            #            save=".".join(["".join([str(self.tool), "_ALL"]), 'svg'])
+            #            )
+            for _ in ['Sample', 'Cell_type', 'EXP', 'ID', 'Time_point', 'Condition']:
                 if len(self.adata_subset.obs[_].unique()) > 1:
                     sc.pl.umap(self.adata_subset, color=_,
                                cmap=self.palette, legend_fontoutline=2, show=False, add_outline=False, frameon=False,
                                title="UMAP Plot",
                                s=50, save=".".join(["_".join([str(self.tool), _]), "pdf"]))
+                else:
+                    continue
+            for _ in ['Cell_type', 'EXP', 'Time_point', 'Condition']:
+                if len(self.adata_subset.obs[_].unique()) > 1:
                     for batch in list(self.adata_subset.obs[_].unique()):
                         sc.pl.umap(self.adata_subset, color=_, groups=[batch], na_in_legend=False,
                                    title="UMAP Plot",
                                    legend_fontoutline=2, show=False, add_outline=False, frameon=False,
                                    s=50, save=".".join(["_".join([_+str(batch), _]), "pdf"])
                                    )
+                else:
+                    continue
 
         elif self.runtime == 'Clustering':
             self.createdir("/".join([self.output_folder, "".join(["Figures", self.tool])]))
@@ -912,14 +923,13 @@ class Cytophenograph:
         if len(self.adata_subset.obs["ID"].unique()) > 1:
             self.dfxlinkage = self.adata_subset.obs.groupby("ID")["pheno_leiden"].value_counts(
                 normalize=True).unstack() * 100
-            Z = linkage(self.dfxlinkage, 'ward')
-            dn = dendrogram(Z, get_leaves=True, orientation='left', labels=self.dfxlinkage.index)
-            mapping = {ptz: i for i, ptz in enumerate(dn['ivl'])}
-            key = self.dfxlinkage.index.map(mapping)
-
+            Z = linkage(self.dfxlinkage, 'ward',
+                        optimal_ordering=True)
+            dn = dendrogram(Z, get_leaves=True, orientation='left', labels=self.dfxlinkage.index,
+                            no_plot=True)
             fig, (ax1, ax2) = plt.subplots(1, 2, constrained_layout=True, figsize=(20, 10))
-            dn = dendrogram(Z, get_leaves=True, orientation='left', ax=ax1)
-            self.dfxlinkage.iloc[key.argsort()].plot.barh(legend=False, stacked=True, ax=ax2)
+            dn = dendrogram(Z, get_leaves=True, orientation='left', labels=self.dfxlinkage.index, ax=ax1)
+            self.dfxlinkage.loc[dn['ivl']].plot.barh(legend=False, stacked=True, ax=ax2, color=self.palette)
             ax1.set(yticklabels=[])
             ax1.set(xticklabels=[])
             ax1.grid(False)
