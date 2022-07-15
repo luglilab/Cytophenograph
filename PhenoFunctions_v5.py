@@ -455,6 +455,7 @@ class Cytophenograph:
         Function per generation of pdf files with umap plot
         """
         if self.runtime == 'Full':
+            # create output directory
             self.createdir("/".join([self.output_folder, "".join(["Figures", self.tool])]))
             self.outfig = "/".join([self.output_folder, "".join(["Figures", self.tool])])
             sc.settings.figdir = self.outfig
@@ -463,20 +464,21 @@ class Cytophenograph:
                 self.palette = self.palette28
             else:
                 self.palette = self.palette102
-            # umap cluster
+            # plot umap + clustering
             sc.pl.umap(self.adata_subset, color="pheno_leiden",
                        legend_fontoutline=2, show=False, add_outline=False, frameon=False,
                        title="UMAP Plot",palette=self.palette,
                        s=50, save=".".join(["".join([str(self.tool), "_cluster"]), "pdf"]))
             sc.pl.umap(self.adata_subset, color="pheno_leiden",
-                       legend_fontoutline=2, show=False, add_outline=False, frameon=False,
-                       legend_loc='on data', title="UMAP Plot",palette=self.palette,
+                       legend_fontoutline=4, show=False, add_outline=False, frameon=False,
+                       legend_loc='on data', title="UMAP Plot", palette=self.palette,
                        s=50, save="_legend_on_data.".join(["".join([str(self.tool), "_cluster"]), self.fileformat]))
+            # format svg
             sc.pl.umap(self.adata_subset, color="pheno_leiden",
-                       legend_fontoutline=2, show=False, add_outline=False, frameon=False,
+                       legend_fontoutline=4, show=False, add_outline=False, frameon=False,
                        legend_loc='on data', title="UMAP Plot",palette=self.palette,
                        s=50, save="_legend_on_data.".join(["".join([str(self.tool), "_cluster"]), 'svg']))
-            # umap obs
+            # plot umap with info file condition
             for _ in ['Sample','Cell_type', 'EXP', 'ID', 'Time_point', 'Condition']:
                 if len(self.adata_subset.obs[_].unique()) > 1:
                     sc.pl.umap(self.adata_subset, color=_, legend_fontoutline=2, show=False, add_outline=False,
@@ -485,6 +487,7 @@ class Cytophenograph:
                                s=50, save=".".join(["_".join([str(self.tool), _]), "pdf"]))
                 else:
                     continue
+            # plot umap grouped with gray background
             for _ in ['Cell_type', 'EXP', 'Time_point', 'Condition']:
                 if len(self.adata_subset.obs[_].unique()) > 1:
                     for batch in list(self.adata_subset.obs[_].unique()):
@@ -557,7 +560,6 @@ class Cytophenograph:
                                    )
                 else:
                     continue
-
         elif self.runtime == 'Clustering':
             self.createdir("/".join([self.output_folder, "".join(["Figures", self.tool])]))
             self.outfig = "/".join([self.output_folder, "".join(["Figures", self.tool])])
