@@ -132,5 +132,4 @@ Please ignore this warning.
  **Graphics output**
  h5ad file with UMAP and others graphical output could be open with Cellxgene ( https://chanzuckerberg.github.io/cellxgene/ ). 
 
-### Please cite:
-Alvisi G, Brummelman J, Puccio S, Mazza EM, Tomada EP, Losurdo A, Zanon V, Peano C, Colombo FS, Scarpa A, Alloisio M, Vasanthakumar A, Roychoudhuri R, Kallikourdis M, Pagani M, Lopci E, Novellis P, Blume J, Kallies A, Veronesi G, Lugli E. IRF4 instructs effector Treg differentiation and immune suppression in human cancer. J Clin Invest. 2020 Jun 1;130(6):3137-3150. doi: 10.1172/JCI130426. PMID: 32125291; PMCID: PMC7260038.
+
