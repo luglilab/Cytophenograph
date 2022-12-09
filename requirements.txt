@@ -4,7 +4,7 @@ bokeh @ file:///opt/concourse/worker/volumes/live/c24fd225-0dca-493f-4338-7c71c1
 Bottleneck @ file:///opt/concourse/worker/volumes/live/d60669af-e41f-414a-5ae7-15dbf0f1c780/volume/bottleneck_1648028923597/work
 brotlipy==0.7.0
 cached-property==1.5.2
-certifi==2022.5.18
+certifi==2022.12.7
 cffi @ file:///private/var/folders/sy/f16zz6x50xz3113nwtb9bvq00000gp/T/croot-2p6q7e2r/cffi_1642701115063/work
 charset-normalizer @ file:///home/conda/feedstock_root/build_artifacts/charset-normalizer_1644853463426/work
 click @ file:///Users/runner/miniforge3/conda-bld/click_1651215218291/work
