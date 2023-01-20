@@ -1,6 +1,5 @@
-from version import __version__
 import optparse
-from PhenoFunctions_v5 import *
+from PhenoFunctions_v6 import *
 
 parser = optparse.OptionParser(usage='python ./Cytophenograph/cytophenograph.v5.py -i $abs_path/Cytophenograph/Test_dataset/CD8_Panel_II_channelvalues_GA_downSampled/ -o $abs_path/Cytophenograph/output_test -k 300 -m $abs_path/Cytophenograph/Test_dataset/CD8_bulk_markers_to_exclude.txt -n Test -t 10 -p $abs_path/Cytophenograph/Test_dataset/Info_file_bulk_Test.xlsx -c VIA', version='5.0')
 parser.add_option('-b', action="store_true", dest="batch", default=False,
@@ -14,11 +13,14 @@ parser.add_option('-e', type='choice', choices=['Sample', 'Cell_type','ID', 'EXP
                   default="Sample", help='Please, specify covariate to correct with Scanorama')
 parser.add_option('-f', type='choice', choices=['All', 'Balanced', 'Fixed'],
                   dest="downsampling",
-                  default="All", help='Concatenation Method. Available options are All, Balaced, Fixed.')
+                  default="All", help='Concatenation Method. Available options are All, Balanced, Fixed.')
 parser.add_option('-g', action="store", dest="cellnumber", default=1000, type=int, help='Number of event to for downsampling.')
 parser.add_option('-i', action="store", dest="input_folder", help='Absolute path of folder with CSV files.')
 parser.add_option('-k', action="store", dest="kmeancoef", help='Number for nearest neighbors search for Phenograph execution.Deafult value is 30',
                   type='string', default='30')
+parser.add_option('-l', action="store",
+                  dest="fileformat", help='Flag to change option format. Default: CSV', choices=['CSV', 'FCS'],
+                  type='choice', default='CSV')
 parser.add_option('-m', action="store", dest="markerlist", help='Text file with features(channel name) to exclude during clustering execution.')
 parser.add_option('-n', action="store", dest="analysis_name", help='Analysis name.')
 parser.add_option('-o', action="store", dest="output_folder", help='Absolute path of output folder. TIPS: Please use an empty folder.')
@@ -62,7 +64,8 @@ if __name__ == '__main__':
                          minclus=options.minclus,
                          maxclus=options.maxclus,
                          downsampling=options.downsampling,
-                         cellnumber=options.cellnumber)
+                         cellnumber=options.cellnumber,
+                         filetype=options.fileformat)
     try:
         DictInfo["Infofile"] = run.read_info_file()
         DictInfo["List_csv_files"] = run.import_all_event()
@@ -86,6 +89,6 @@ if __name__ == '__main__':
             run.groupbysample()
             run.exporting()
     except Exception:
-        print(traceback.format_exc())
+        # print(traceback.format_exc())
         run.log.error("Execution Error!")
         sys.exit(1)
