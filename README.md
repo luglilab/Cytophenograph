@@ -95,7 +95,7 @@ docker run -it cytophenograph5 bash -c "python /Cytophenograph/cytophenograph.v5
 
 
 ```python
-python ./Cytophenograph/cytophenograph.v5.py --help
+python ./Cytophenograph/cytophenograph.v6.py --help
 ```
 
 
