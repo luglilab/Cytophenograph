@@ -64,7 +64,7 @@ pip install phenograph==1.5.7
 ```
 **Strategy 2 : Execute the following command** 
 ```python
-conda create --name Cytophenograph5.1 python=3.9  r-base hnswlib
+conda create --name Cytophenograph6 python=3.9  r-base hnswlib
 conda activate Cytophenograph6
 pip install pyVIA
 conda install -c bioconda scanorama -y
