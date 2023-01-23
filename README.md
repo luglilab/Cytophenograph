@@ -33,8 +33,8 @@ Tested on Debian GNU/Linux server
 
 **Strategy 1 : Use YML file to clone environment** 
 ```python
-conda env create -n cytophenograph6 -f ./Cytophenograph/environment_cytophenograph5_1_linux.yml
-conda activate cytophenograph6
+conda env create -n Cytophenograph6 -f ./Cytophenograph/environment_cytophenograph5_1_linux.yml
+conda activate Cytophenograph6
 pip install -e ./Cytophenograph/FlowSOM_LugliLab
 pip install phenograph==1.5.7
 ```
@@ -57,8 +57,8 @@ conda install scikit-image -y
 Tested on computer with ios 10.15.7 
 **Strategy 1 : Use YML file to clone environment** 
 ```python
-conda env create -n cytophenograph6 -f ./Cytophenograph/environment_cytophenograph6_mac.yml
-conda activate cytophenograph6
+conda env create -n Cytophenograph6 -f ./Cytophenograph/environment_cytophenograph6_mac.yml
+conda activate Cytophenograph6
 pip install -e ./Cytophenograph/FlowSOM_LugliLab
 pip install phenograph==1.5.7
 ```
