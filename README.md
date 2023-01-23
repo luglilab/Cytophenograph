@@ -106,7 +106,7 @@ mkdir -p $abs_path/Cytophenograph/output_test
 # Run Phenograph
 python ./Cytophenograph/cytophenograph.v6.py -i $abs_path/Cytophenograph/Example_One_Inputs/CSVFiles/ -o $abs_path/Cytophenograph/output_test/ -k 60 -m $abs_path/Cytophenograph/Example_One_Inputs/InfoFile/marker.txt -n Test -t 10 -p $abs_path/Cytophenograph/Example_One_Inputs/InfoFile/Info_file_bulk_Test.xlsx -c Phenograph
 # Run VIA
-python ./Cytophenograph/cytophenograph.v6.py -i $abs_path/Cytophenograph/Test_dataset2/sample/ -o $abs_path/Cytophenograph/output_test -w 30 -z 1.0 -m $abs_path/Cytophenograph/Test_dataset2/markers_to_exclude.txt -n Test -t 10 -p $abs_path/Cytophenograph/Test_dataset2/Info_file_bulk_Test.xlsx -c VIA
+python ./Cytophenograph/cytophenograph.v6.py -i $abs_path/Cytophenograph/Example_One_Inputs/CSVFiles/ -o $abs_path/Cytophenograph/output_test/ -w 30 -z 1.0 -m $abs_path/Cytophenograph/Example_One_Inputs/InfoFile/marker.txt -n Test -t 10 -p $abs_path/Cytophenograph/Example_One_Inputs/InfoFile/Info_file_bulk_Test.xlsx -c VIA
 # Run Flowsom
 python ./Cytophenograph/cytophenograph.v6.py -i $abs_path/Cytophenograph/Test_dataset2/sample/ -o $abs_path/Cytophenograph/output_test -x 5 -y 31  -m $abs_path/Cytophenograph/Test_dataset2/markers_to_exclude.txt -n Test -t 10 -p $abs_path/Cytophenograph/Test_dataset2/Info_file_bulk_Test.xlsx -c Flowsom
 
