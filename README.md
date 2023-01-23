@@ -108,7 +108,7 @@ python ./Cytophenograph/cytophenograph.v6.py -i $abs_path/Cytophenograph/Example
 # Run VIA
 python ./Cytophenograph/cytophenograph.v6.py -i $abs_path/Cytophenograph/Example_One_Inputs/CSVFiles/ -o $abs_path/Cytophenograph/output_test/ -w 30 -z 1.0 -m $abs_path/Cytophenograph/Example_One_Inputs/InfoFile/marker.txt -n Test -t 10 -p $abs_path/Cytophenograph/Example_One_Inputs/InfoFile/Info_file_bulk_Test.xlsx -c VIA
 # Run Flowsom
-python ./Cytophenograph/cytophenograph.v6.py -i /home/lugli/spuccio/Cytophenograph/Example_One_Inputs/CSVFiles/ -o /home/lugli/spuccio/Cytophenograph/output_test/ -x 5 -y 31 -m /home/lugli/spuccio/Cytophenograph/Example_One_Inputs/InfoFile/marker.txt  -n Test -t 10 -p /home/lugli/spuccio/Cytophenograph/Example_One_Inputs/InfoFile/Info_file_bulk_Test.xlsx -c FlowSOM
+python ./Cytophenograph/cytophenograph.v6.py -i $abs_path/Cytophenograph/Example_One_Inputs/CSVFiles/ -o $abs_path/Cytophenograph/output_test/ -x 5 -y 31 -m $abs_path/Cytophenograph/Example_One_Inputs/InfoFile/marker.txt  -n Test -t 10 -p $abs_path/Cytophenograph/Example_One_Inputs/InfoFile/Info_file_bulk_Test.xlsx -c FlowSOM
 
 ```
 # 
