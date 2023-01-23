@@ -40,8 +40,8 @@ pip install phenograph==1.5.7
 ```
 **Strategy 2 : Execute the following command** 
 ```python
-conda create --name Cytophenograph5.1 python=3.7  r-base hnswlib
-conda activate Cytophenograph5.1
+conda create --name Cytophenograph6 python=3.9  r-base hnswlib
+conda activate Cytophenograph6
 pip install pyVIA
 conda install -c bioconda scanorama -y
 conda install -c conda-forge datashader -y
@@ -57,15 +57,15 @@ conda install scikit-image -y
 Tested on computer with ios 10.15.7 
 **Strategy 1 : Use YML file to clone environment** 
 ```python
-conda env create -n cytophenograph5.1 -f ./Cytophenograph/environment_cytophenograph5_1_mac.yml
-conda activate cytophenograph5.1
+conda env create -n cytophenograph6 -f ./Cytophenograph/environment_cytophenograph6_mac.yml
+conda activate cytophenograph6
 pip install -e ./Cytophenograph/FlowSOM_LugliLab
 pip install phenograph==1.5.7
 ```
 **Strategy 2 : Execute the following command** 
 ```python
-conda create --name Cytophenograph5.1 python=3.7  r-base hnswlib
-conda activate Cytophenograph5.1
+conda create --name Cytophenograph5.1 python=3.9  r-base hnswlib
+conda activate Cytophenograph6
 pip install pyVIA
 conda install -c bioconda scanorama -y
 conda install -c conda-forge datashader -y
