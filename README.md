@@ -5,8 +5,7 @@ Identifies subpopulations in high-dimensional single-cell data. Cytophenograph i
 ## 1) Installation 
 
 Install Miniconda
-Miniconda is a Python distribution, package manager, and virtual environment solution. We recommend installing Miniconda with Python 3 (miniconda3), as many bioinformatics packages are now transitioning to Python 3. You can still install Python 2 software with miniconda3 by passing the python=2.7 flag when you create a new environment; otherwise the default Python version will be Python 3.
-
+Miniconda is a Python distribution, package manager, and virtual environment solution. We recommend installing Miniconda with Python 3 (miniconda3), as many bioinformatics packages are now transitioning to Python 3. 
 Begin by downloading Miniconda and following the associated installation instructions.
 
 https://docs.conda.io/en/latest/miniconda.html
