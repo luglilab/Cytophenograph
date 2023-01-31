@@ -80,7 +80,7 @@ conda install scikit-image
 ### Docker 
 ```
 Please visit Docker Hub:
-https://hub.docker.com/r/sinnamone/cytophenograph5
+[https://hub.docker.com/r/sinnamone/cytophenograph5](https://hub.docker.com/r/sinnamone/cytophenograph6)
 
 or 
 
