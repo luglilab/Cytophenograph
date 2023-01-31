@@ -86,8 +86,8 @@ or
 
 use Dockerfile
 
-docker build  -t cytophenograph5 .
-docker run -it cytophenograph5 bash -c "python /Cytophenograph/cytophenograph.v5.py --help" 
+docker build  -t cytophenograph6 .
+docker run -it cytophenograph6 bash -c "python /Cytophenograph/cytophenograph.v5.py --help" 
 ```
 
 ###  Move on Phenograph folder
