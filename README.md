@@ -88,6 +88,8 @@ use Dockerfile
 
 docker build  -t cytophenograph6 .
 
+To test the execution:
+
 abs_path=$(pwd)
 
 mkdir -p $abs_path/Cytophenograph/output_test
@@ -96,7 +98,6 @@ docker run --entrypoint /bin/bash -v $abs_path:/data -w /data -p 8891:8891  -it 
 
 python cytophenograph.v6.py -i /data/Example_One_Inputs/CSVFiles/ -o /data/output_test/ -k 60 -m /data/Example_One_Inputs/InfoFile/marker.txt -n Test -t 10 -p /data/Example_One_Inputs/InfoFile/Info_file_bulk_Test.xlsx -c Phenograph
 
-docker run -it cytophenograph6 bash -c "python /Cytophenograph/cytophenograph.v5.py --help" 
 ```
 
 ###  Move on Phenograph folder
