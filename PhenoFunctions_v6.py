@@ -255,8 +255,10 @@ class Cytophenograph:
 
         """
         df = DataFrame.from_fcs(path_csv_file, channel_type='multi')
-        df.columns = df.columns.droplevel()
+        df.columns = df.columns.map(' :: '.join)
         df.columns = df.columns.str.replace('[\",\']', '')
+        df.columns = df.columns.str.replace(' $', '', regex=True)
+        df.columns = df.columns.str.replace(" \:: $", "", regex=True)
         if self.downsampling == "Balanced":
             if self.cellnumber < df.shape[0]:
                 df = df.sample(n=int(self.cellnumber), random_state=42,
@@ -332,7 +334,6 @@ class Cytophenograph:
         # create empy list for save several df
         pandas_df_list = []
         # create list with anndata object
-
         # loop over csv file name
         for i in range(len(csv_list)):
             if self.filetype == "CSV":
@@ -343,6 +344,7 @@ class Cytophenograph:
         # check header
         if all([len(pandas_df_list[0].columns.intersection(df.columns)) == pandas_df_list[0].shape[1]
                 for df in pandas_df_list]):
+
             try:
                 for i in range(len(pandas_df_list)):
                     # save column with Sample name in list
@@ -455,6 +457,7 @@ class Cytophenograph:
         # read marker file
         self.marker_array = [line.rstrip() for line in open(self.marker_list)]
         newmarker = []
+        #if self.filetype == "CSV":
         for _ in self.marker_array:
             newmarker.append(_.split(":: ")[-1])
         self.marker_array = newmarker
