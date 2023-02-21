@@ -1103,7 +1103,9 @@ class Cytophenograph:
                               "".join([str(unique_filename[i]), "_", self.analysis_name,
                                        ".csv"])]),
                     header=True, index=False)
-            #TODO export FCS
+            fcsy.write_fcs(self.tmp.loc[self.tmp.index == unique_filename[i]],
+                           "/".join([self.output_folder, "".join(["Sample", self.tool]),
+                                     "".join([str(unique_filename[i]), "_", self.analysis_name, ".fcs"])]))
 
     def runtimeumap(self):
         """
