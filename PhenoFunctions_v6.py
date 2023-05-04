@@ -407,7 +407,6 @@ class Cytophenograph:
             if self.cellnumber < self.adata.shape[0]:
                 sc.pp.subsample(self.adata, n_obs=self.cellnumber, random_state=42)
             else:
-                # self.log.info("It was not possible to downsample because the fixed number of events is greater than the original number of events. Decrease the threshold for downsampling.")
                 pass
         self.log.info("{0} cells undergo to clustering analysis".format(self.adata.shape[0]))
         return self.adata
@@ -639,8 +638,6 @@ class Cytophenograph:
         try:
             self.log.info("Perform Flow Auto QC with FlowAI tool.")
             df = pd.DataFrame(self.adata.X, columns=self.adata.var.index, index=self.adata.obs.index)
-            #df1 = pd.DataFrame(self.adata.X, columns=self.adata.var.index, index=self.adata.obs.index)
-            # print(df.head())
             self.concatenate_fcs = "/".join([self.output_folder,
                                "Test_ConcatenatedCells.fcs"])
             if 'Time' in df.columns:
@@ -649,16 +646,19 @@ class Cytophenograph:
                 subprocess.check_call(['Rscript', '--vanilla',
                                        self.path_flowai,self.concatenate_fcs,
                                    self.output_folder], stdout=fnull, stderr=fnull)
-                df =fcsy.read_fcs("/".join([self.output_folder,"V1_concatenate_after_QC.fcs"]))
-                df.set_index(self.adata.obs.index,inplace=True)
+                print( "/".join([self.output_folder,
+                                 "Test_ConcatenatedCells_concatenate_after_QC.fcs"]))
+                df =fcsy.read_fcs("".join([self.output_folder,
+                                           "Test_ConcatenatedCells_concatenate_after_QC.fcs"]))
                 self.adata2 = sc.AnnData(df)
                 self.adata2.obs = self.adata.obs
                 self.adata = self.adata2.copy()
                 del self.adata2
-                self.adata = self.adata[(self.adata[:,'remove_from_all'].X<10000).flatten(), : ]
+                self.adata = self.adata[(self.adata[:,'remove_from_FM'].X<10000).flatten(), : ]
                 time_indicator = np.in1d(self.adata.var_names, 'remove_from_all')
                 self.adata = self.adata[:, ~ time_indicator]
                 self.adata.layers['raw_value'] = self.adata.X
+                self.log.info("{0} cells after FlowAI analysis".format(self.adata.shape[0]))
                 return self.adata
             else:
                 # self.log.info("Time channel not found. Skip QC")
