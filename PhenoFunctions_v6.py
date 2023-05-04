@@ -24,6 +24,7 @@ from scipy.cluster.hierarchy import dendrogram, linkage
 matplotlib.use('Agg')
 from version import __version__
 warnings.filterwarnings('ignore')
+# import traceback
 
 
 tmp = tempfile.NamedTemporaryFile()
@@ -500,9 +501,11 @@ class Cytophenograph:
         """
         if self.runtime == 'Full':
             # create output directory
-            self.createdir("/".join([self.output_folder, "".join(["Figures", self.tool])]))
             self.outfig = "/".join([self.output_folder, "".join(["Figures", self.tool])])
-            sc.settings.figdir = self.outfig
+            self.createdir(self.outfig)
+            self.UMAP_folder =  "/".join([self.outfig, "UMAP"])
+            self.createdir(self.UMAP_folder)
+            sc.settings.figdir = self.UMAP_folder
             # set palette
             if len(self.adata_subset.obs["pheno_leiden"].unique()) < 28:
                 self.palette = self.palette28
@@ -613,6 +616,9 @@ class Cytophenograph:
         Function for the generation of matrixplot sc.pl.matrixplot
         return:
         """
+        self.matrixplot_folder = "/".join([self.outfig, "HEATMAP"])
+        self.createdir(self.matrixplot_folder)
+        sc.settings.figdir = self.matrixplot_folder
         if self.runtime != 'UMAP':
             sc.pl.matrixplot(self.adata_subset, list(self.adata_subset.var_names), "pheno_leiden",
                              dendrogram=True, vmin=-2, vmax=2, cmap='RdBu_r', layer="scaled",
@@ -633,7 +639,8 @@ class Cytophenograph:
 
     def createfcs(self):
         """
-    
+        Function for the generation of fcs files and FlowAI QC
+        return: Anndata with filtered cells
         """
         try:
             self.log.info("Perform Flow Auto QC with FlowAI tool.")
@@ -646,17 +653,11 @@ class Cytophenograph:
                 subprocess.check_call(['Rscript', '--vanilla',
                                        self.path_flowai,self.concatenate_fcs,
                                    self.output_folder], stdout=fnull, stderr=fnull)
-                print( "/".join([self.output_folder,
-                                 "Test_ConcatenatedCells_concatenate_after_QC.fcs"]))
                 df =fcsy.read_fcs("".join([self.output_folder,
                                            "Test_ConcatenatedCells_concatenate_after_QC.fcs"]))
-                self.adata2 = sc.AnnData(df)
-                self.adata2.obs = self.adata.obs
-                self.adata = self.adata2.copy()
-                del self.adata2
-                self.adata = self.adata[(self.adata[:,'remove_from_FM'].X<10000).flatten(), : ]
-                time_indicator = np.in1d(self.adata.var_names, 'remove_from_all')
-                self.adata = self.adata[:, ~ time_indicator]
+                df.set_index(self.adata.obs.index, inplace=True)
+                self.adata.obs['remove_from_FM'] = df['remove_from_FM']
+                self.adata = self.adata[(self.adata.obs['remove_from_FM'] < 10000),:]
                 self.adata.layers['raw_value'] = self.adata.X
                 self.log.info("{0} cells after FlowAI analysis".format(self.adata.shape[0]))
                 return self.adata
@@ -664,6 +665,7 @@ class Cytophenograph:
                 # self.log.info("Time channel not found. Skip QC")
                 pass
         except:
+            #print(traceback.format_exc())
             # self.log.info("Impossible to complete Flow Auto QC. Check Time channel.")
             pass
 
