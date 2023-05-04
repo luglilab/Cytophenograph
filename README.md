@@ -39,6 +39,9 @@ pip install phenograph==1.5.7
 ```
 **Strategy 2 : Execute the following command** 
 ```python
+conda config --add channels conda-forge
+conda config --add channels bioconda
+conda config --add channels bpteague
 conda create --name Cytophenograph6 python=3.9  r-base hnswlib
 conda activate Cytophenograph6
 pip install pyVIA
@@ -63,7 +66,10 @@ pip install phenograph==1.5.7
 ```
 **Strategy 2 : Execute the following command** 
 ```python
-conda create --name Cytophenograph6 python=3.9  r-base hnswlib
+conda config --add channels conda-forge
+conda config --add channels bioconda
+conda config --add channels bpteague
+conda create --name Cytophenograph6 python=3.9  r-base hnswlib 
 conda activate Cytophenograph6
 pip install pyVIA
 conda install -c bioconda scanorama -y
