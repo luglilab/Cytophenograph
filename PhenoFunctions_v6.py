@@ -21,17 +21,20 @@ from fcsy import DataFrame
 import subprocess
 import numpy as np
 from scipy.cluster.hierarchy import dendrogram, linkage
+
 matplotlib.use('Agg')
 from version import __version__
+
 warnings.filterwarnings('ignore')
+# import traceback
 
 
 tmp = tempfile.NamedTemporaryFile()
 sc.settings.autoshow = False
-sc.settings.set_figure_params(dpi=300, facecolor='white', dpi_save=330,
-                              figsize=(10, 10))
+sc.settings.set_figure_params(dpi = 300, facecolor = 'white', dpi_save = 330,
+                              figsize = (10, 10))
 sc.settings.verbosity = 0
-warnings.filterwarnings("ignore", category=FutureWarning)
+warnings.filterwarnings("ignore", category = FutureWarning)
 
 
 class CustomFormatter(logging.Formatter):
@@ -46,6 +49,7 @@ class CustomFormatter(logging.Formatter):
         log_fmt = self.FORMATS.get(record.levelno, self.FORMATS['DEFAULT'])
         formatter = logging.Formatter(log_fmt)
         return formatter.format(record)
+
 
 class Cytophenograph:
     def __init__(self, info_file, input_folder, output_folder, k_coef, marker_list, analysis_name, thread, tool, batch,
@@ -250,21 +254,20 @@ class Cytophenograph:
 
     def read_fcs(self, path_csv_file):
         """
-
-        Returns:
-
+        Read FCS file version 3 and convert in pandas dataframe
+        Returns: Pandas Dataframe
         """
-        df = DataFrame.from_fcs(path_csv_file, channel_type='multi')
+        df = DataFrame.from_fcs(path_csv_file, channel_type = 'multi')
         df.columns = df.columns.map(' :: '.join)
         df.columns = df.columns.str.replace('[\",\']', '')
-        df.columns = df.columns.str.replace(' $', '', regex=True)
-        df.columns = df.columns.str.replace(" \:: $", "", regex=True)
+        df.columns = df.columns.str.replace(' $', '', regex = True)
+        df.columns = df.columns.str.replace(" \:: $", "", regex = True)
         if self.downsampling == "Balanced":
             if self.cellnumber < df.shape[0]:
-                df = df.sample(n=int(self.cellnumber), random_state=42,
-                               ignore_index=True)
+                df = df.sample(n = int(self.cellnumber), random_state = 42,
+                               ignore_index = True)
             else:
-                #self.log.info(
+                # self.log.info(
                 #    "It was not possible to downsample because the fixed number of events is greater than the original number of events. Decrease the threshold for downsampling.")
                 pass
         barcode = []
@@ -280,7 +283,7 @@ class Cytophenograph:
         Read info file methods
         :return: pandas dataframe
         """
-        df_info = pd.read_excel(self.info_file, header=0)
+        df_info = pd.read_excel(self.info_file, header = 0)
         return df_info
 
     def import_all_event(self):
@@ -306,15 +309,15 @@ class Cytophenograph:
     def create_df(self, path_csv_file):
         """
         create dataframe file csv
-        :return:
+        :return: pandas dataframe
         """
-        df = pd.read_csv(path_csv_file, header=0)
+        df = pd.read_csv(path_csv_file, header = 0)
         if self.downsampling == "Balanced":
             if self.cellnumber < df.shape[0]:
-                df = df.sample(n=int(self.cellnumber), random_state=42,
-                               ignore_index=True)
+                df = df.sample(n = int(self.cellnumber), random_state = 42,
+                               ignore_index = True)
             else:
-                #self.log.info("It was not possible to downsample because the fixed number of events is greater than the original number of events. Decrease the threshold for downsampling.")
+                # self.log.info("It was not possible to downsample because the fixed number of events is greater than the original number of events. Decrease the threshold for downsampling.")
                 pass
         barcode = []
         names = os.path.basename(path_csv_file)
@@ -402,12 +405,11 @@ class Cytophenograph:
             # print(traceback.format_exc())
             self.log.error("Error. Please check Info File Header or CSV header.")
             sys.exit(1)
-        self.tmp_df = pd.DataFrame(self.adata.X, index=self.adata.obs.index)
+        self.tmp_df = pd.DataFrame(self.adata.X, index = self.adata.obs.index)
         if self.downsampling == "Fixed":
             if self.cellnumber < self.adata.shape[0]:
-                sc.pp.subsample(self.adata, n_obs=self.cellnumber, random_state=42)
+                sc.pp.subsample(self.adata, n_obs = self.cellnumber, random_state = 42)
             else:
-                # self.log.info("It was not possible to downsample because the fixed number of events is greater than the original number of events. Decrease the threshold for downsampling.")
                 pass
         self.log.info("{0} cells undergo to clustering analysis".format(self.adata.shape[0]))
         return self.adata
@@ -419,19 +421,19 @@ class Cytophenograph:
         """
         self.adata_subset = self.adata[:, self.markertoinclude].copy()
         self.adata_subset.layers['raw_value'] = self.adata_subset.X
-        self.adata_subset.layers['scaled'] = sc.pp.scale(self.adata_subset, max_value=6,
-                                                         zero_center=True, copy=True).X
+        self.adata_subset.layers['scaled'] = sc.pp.scale(self.adata_subset, max_value = 6,
+                                                         zero_center = True, copy = True).X
         self.anndata_list = [self.adata_subset[self.adata_subset.obs[self.batchcov] == i] for i in
                              self.adata_subset.obs[self.batchcov].unique()]
         self.corrected = scanorama.correct_scanpy(self.anndata_list,
-                                                  return_dense=True,
-                                                  return_dimred=True,
-                                                  approx=False,
-                                                  verbose=0,
-                                                  seed=42)
+                                                  return_dense = True,
+                                                  return_dimred = True,
+                                                  approx = False,
+                                                  verbose = 0,
+                                                  seed = 42)
         self.corrected_dataset = self.corrected[0].concatenate(self.corrected[1:],
-                                                               join='inner',
-                                                               batch_key=self.batchcov)
+                                                               join = 'inner',
+                                                               batch_key = self.batchcov)
         self.corrected_dataset.layers['raw_value'] = self.adata_subset.X
         self.corrected_dataset.layers['scaled'] = self.adata_subset.layers['scaled']
         return self.corrected_dataset
@@ -457,7 +459,7 @@ class Cytophenograph:
         # read marker file
         self.marker_array = [line.rstrip() for line in open(self.marker_list)]
         newmarker = []
-        #if self.filetype == "CSV":
+        # if self.filetype == "CSV":
         for _ in self.marker_array:
             newmarker.append(_.split(":: ")[-1])
         self.marker_array = newmarker
@@ -475,7 +477,8 @@ class Cytophenograph:
 
     def splitmarker(self):
         """
-
+        function for split marker in two list
+        return: list of marker to include in analysis
         """
         self.marker = self.adata.var_names.to_list()
         self.markertoinclude = [i for i in self.marker if i not in self.marker_array]
@@ -483,13 +486,14 @@ class Cytophenograph:
 
     def runumap(self):
         """
-        Function that perform UMAP dimensional reduction
-        return: embedding
+        Function for UMAP generation
+        return: UMAP embedding
         """
         self.log.warning("PART 3")
         if self.runtime != 'Clustering':
             self.log.info("UMAP (Uniform Manifold Approximation and Projection) generation")
-            reducer = umap.UMAP(random_state=42, n_neighbors=self.n_neighbors, min_dist=self.mindist, spread=self.spread)
+            reducer = umap.UMAP(random_state = 42, n_neighbors = self.n_neighbors, min_dist = self.mindist,
+                                spread = self.spread)
             embedding = reducer.fit_transform(self.adata_subset.X)
             return embedding
         else:
@@ -498,84 +502,87 @@ class Cytophenograph:
     def plot_umap(self):
         """
         Function per generation of pdf files with umap plot
+        return: pdf files
         """
         if self.runtime == 'Full':
             # create output directory
-            self.createdir("/".join([self.output_folder, "".join(["Figures", self.tool])]))
             self.outfig = "/".join([self.output_folder, "".join(["Figures", self.tool])])
-            sc.settings.figdir = self.outfig
+            self.createdir(self.outfig)
+            self.UMAP_folder = "/".join([self.outfig, "UMAP"])
+            self.createdir(self.UMAP_folder)
+            sc.settings.figdir = self.UMAP_folder
             # set palette
             if len(self.adata_subset.obs["pheno_leiden"].unique()) < 28:
                 self.palette = self.palette28
             else:
                 self.palette = self.palette102
             # plot umap + clustering
-            sc.pl.umap(self.adata_subset, color="pheno_leiden",
-                       legend_fontoutline=2, show=False, add_outline=False, frameon=False,
-                       title="UMAP Plot",palette=self.palette,
-                       s=50, save=".".join(["".join([str(self.tool), "_cluster"]), "pdf"]))
-            sc.pl.umap(self.adata_subset, color="pheno_leiden",
-                       legend_fontoutline=4, show=False, add_outline=False, frameon=False,
-                       legend_loc='on data', title="UMAP Plot", palette=self.palette,
-                       s=50, save="_legend_on_data.".join(["".join([str(self.tool), "_cluster"]), self.fileformat]))
+            sc.pl.umap(self.adata_subset, color = "pheno_leiden",
+                       legend_fontoutline = 2, show = False, add_outline = False, frameon = False,
+                       title = "UMAP Plot", palette = self.palette,
+                       s = 50, save = ".".join(["".join([str(self.tool), "_cluster"]), "pdf"]))
+            sc.pl.umap(self.adata_subset, color = "pheno_leiden",
+                       legend_fontoutline = 4, show = False, add_outline = False, frameon = False,
+                       legend_loc = 'on data', title = "UMAP Plot", palette = self.palette,
+                       s = 50, save = "_legend_on_data.".join(["".join([str(self.tool), "_cluster"]), self.fileformat]))
             # format svg
-            sc.pl.umap(self.adata_subset, color="pheno_leiden",
-                       legend_fontoutline=4, show=False, add_outline=False, frameon=False,
-                       legend_loc='on data', title="UMAP Plot",palette=self.palette,
-                       s=50, save="_legend_on_data.".join(["".join([str(self.tool), "_cluster"]), 'svg']))
+            sc.pl.umap(self.adata_subset, color = "pheno_leiden",
+                       legend_fontoutline = 4, show = False, add_outline = False, frameon = False,
+                       legend_loc = 'on data', title = "UMAP Plot", palette = self.palette,
+                       s = 50, save = "_legend_on_data.".join(["".join([str(self.tool), "_cluster"]), 'svg']))
             # plot umap with info file condition
-            for _ in ['Sample','Cell_type', 'EXP', 'ID', 'Time_point', 'Condition']:
+            for _ in ['Sample', 'Cell_type', 'EXP', 'ID', 'Time_point', 'Condition']:
                 if len(self.adata_subset.obs[_].unique()) > 1:
-                    sc.pl.umap(self.adata_subset, color=_, legend_fontoutline=2, show=False, add_outline=False,
-                               frameon=False,
-                               title="UMAP Plot",
-                               s=50, save=".".join(["_".join([str(self.tool), _]), "pdf"]))
+                    sc.pl.umap(self.adata_subset, color = _, legend_fontoutline = 2, show = False, add_outline = False,
+                               frameon = False,
+                               title = "UMAP Plot",
+                               s = 50, save = ".".join(["_".join([str(self.tool), _]), "pdf"]))
                 else:
                     continue
             # plot umap grouped with gray background
             for _ in ['Cell_type', 'EXP', 'Time_point', 'Condition']:
                 if len(self.adata_subset.obs[_].unique()) > 1:
                     for batch in list(self.adata_subset.obs[_].unique()):
-                        sc.pl.umap(self.adata_subset, color=_, groups=[batch], na_in_legend=False,
-                                   title="UMAP Plot",
-                                   legend_fontoutline=2, show=False, add_outline=False, frameon=False,
-                                   s=50, save=".".join(["_".join([_+str(batch), _]), "pdf"]) )
+                        sc.pl.umap(self.adata_subset, color = _, groups = [batch], na_in_legend = False,
+                                   title = "UMAP Plot",
+                                   legend_fontoutline = 2, show = False, add_outline = False, frameon = False,
+                                   s = 50, save = ".".join(["_".join([_ + str(batch), _]), "pdf"]))
                 else:
                     continue
             # scale data
-            self.scaler = MinMaxScaler(feature_range=(0, 1))
+            self.scaler = MinMaxScaler(feature_range = (0, 1))
             self.adata_subset.layers['scaled01'] = self.scaler.fit_transform(self.adata_subset.layers['raw_value'])
             for _ in list(self.adata_subset.var_names.unique()):
                 if self.scaler is True:
-                    sc.pl.umap(self.adata_subset, color=_, show=False, layer="raw_value",
-                               legend_fontoutline=1, na_in_legend=False, s=30,
-                               title=_, cmap='turbo', groups=[_],
-                               save=".".join([''.join(e for e in _ if e.isalnum()), self.fileformat])
+                    sc.pl.umap(self.adata_subset, color = _, show = False, layer = "raw_value",
+                               legend_fontoutline = 1, na_in_legend = False, s = 30,
+                               title = _, cmap = 'turbo', groups = [_],
+                               save = ".".join([''.join(e for e in _ if e.isalnum()), self.fileformat])
                                )
                 else:
-                    sc.pl.umap(self.adata_subset, color=_, show=False, layer="scaled01",
-                               legend_fontoutline=1, na_in_legend=False, s=30,
-                               title=_, cmap='turbo', groups=[_],
-                               save=".".join([''.join(e for e in _ if e.isalnum()), self.fileformat])
+                    sc.pl.umap(self.adata_subset, color = _, show = False, layer = "scaled01",
+                               legend_fontoutline = 1, na_in_legend = False, s = 30,
+                               title = _, cmap = 'turbo', groups = [_],
+                               save = ".".join([''.join(e for e in _ if e.isalnum()), self.fileformat])
                                )
             # self.listmarkerplot = ['pheno_leiden']
             # for _ in range(len(list(self.adata_subset.var_names))):
-                # self.listmarkerplot.append(list(self.adata_subset.var_names)[_])
+            # self.listmarkerplot.append(list(self.adata_subset.var_names)[_])
             # sc.pl.umap(self.adata_subset, color=self.listmarkerplot, show=False, layer="scaled01",
-                       # legend_fontoutline=1, na_in_legend=False, s=30, cmap='turbo',
-                       # save=".".join(["".join([str(self.tool), "_ALL"]), self.fileformat])
-                       # )
+            # legend_fontoutline=1, na_in_legend=False, s=30, cmap='turbo',
+            # save=".".join(["".join([str(self.tool), "_ALL"]), self.fileformat])
+            # )
         elif self.runtime == 'UMAP':
             self.createdir("/".join([self.output_folder, "".join(["Figures", self.tool])]))
             self.outfig = "/".join([self.output_folder, "".join(["Figures", self.tool])])
             sc.settings.figdir = self.outfig
-            scaler = MinMaxScaler(feature_range=(0, 1))
+            scaler = MinMaxScaler(feature_range = (0, 1))
             self.adata_subset.layers['scaled01'] = scaler.fit_transform(self.adata_subset.layers['raw_value'])
             for _ in list(self.adata_subset.var_names.unique()):
-                sc.pl.umap(self.adata_subset, color=_, show=False, layer="scaled01",
-                           legend_fontoutline=1, na_in_legend=False, s=30, frameon=False,
-                           title=_, cmap='turbo', groups=[_],
-                           save=".".join([''.join(e for e in _ if e.isalnum()), self.fileformat])
+                sc.pl.umap(self.adata_subset, color = _, show = False, layer = "scaled01",
+                           legend_fontoutline = 1, na_in_legend = False, s = 30, frameon = False,
+                           title = _, cmap = 'turbo', groups = [_],
+                           save = ".".join([''.join(e for e in _ if e.isalnum()), self.fileformat])
                            )
             # sc.pl.umap(self.adata_subset, color=list(self.adata_subset.var_names), show=False, layer="scaled01",
             #            legend_fontoutline=1, na_in_legend=False, s=30,
@@ -589,19 +596,20 @@ class Cytophenograph:
             #            )
             for _ in ['Sample', 'Cell_type', 'EXP', 'ID', 'Time_point', 'Condition']:
                 if len(self.adata_subset.obs[_].unique()) > 1:
-                    sc.pl.umap(self.adata_subset, color=_,
-                               cmap=self.palette, legend_fontoutline=2, show=False, add_outline=False, frameon=False,
-                               title="UMAP Plot",
-                               s=50, save=".".join(["_".join([str(self.tool), _]), "pdf"]))
+                    sc.pl.umap(self.adata_subset, color = _,
+                               cmap = self.palette, legend_fontoutline = 2, show = False, add_outline = False,
+                               frameon = False,
+                               title = "UMAP Plot",
+                               s = 50, save = ".".join(["_".join([str(self.tool), _]), "pdf"]))
                 else:
                     continue
             for _ in ['Cell_type', 'EXP', 'Time_point', 'Condition']:
                 if len(self.adata_subset.obs[_].unique()) > 1:
                     for batch in list(self.adata_subset.obs[_].unique()):
-                        sc.pl.umap(self.adata_subset, color=_, groups=[batch], na_in_legend=False,
-                                   title="UMAP Plot",
-                                   legend_fontoutline=2, show=False, add_outline=False, frameon=False,
-                                   s=50, save=".".join(["_".join([_+str(batch), _]), "pdf"])
+                        sc.pl.umap(self.adata_subset, color = _, groups = [batch], na_in_legend = False,
+                                   title = "UMAP Plot",
+                                   legend_fontoutline = 2, show = False, add_outline = False, frameon = False,
+                                   s = 50, save = ".".join(["_".join([_ + str(batch), _]), "pdf"])
                                    )
                 else:
                     continue
@@ -612,58 +620,58 @@ class Cytophenograph:
     def matrixplot(self):
         """
         Function for the generation of matrixplot sc.pl.matrixplot
-        return:
+        return: matrixplot
         """
+        self.matrixplot_folder = "/".join([self.outfig, "HEATMAP"])
+        self.createdir(self.matrixplot_folder)
+        sc.settings.figdir = self.matrixplot_folder
         if self.runtime != 'UMAP':
             sc.pl.matrixplot(self.adata_subset, list(self.adata_subset.var_names), "pheno_leiden",
-                             dendrogram=True, vmin=-2, vmax=2, cmap='RdBu_r', layer="scaled",
-                             show=False, swap_axes=False, return_fig=False,
-                             save=".".join(["matrixplot_mean_z_score", self.fileformat]))
+                             dendrogram = True, vmin = -2, vmax = 2, cmap = 'RdBu_r', layer = "scaled",
+                             show = False, swap_axes = False, return_fig = False,
+                             save = ".".join(["matrixplot_mean_z_score", self.fileformat]))
             sc.pl.matrixplot(self.adata_subset, list(self.adata_subset.var_names), "pheno_leiden",
-                             dendrogram=True, vmin=-2, vmax=2, cmap='RdBu_r', layer="scaled",
-                             show=False, swap_axes=False, return_fig=False,
-                             save=".".join(["matrixplot_mean_z_score", 'svg']))
+                             dendrogram = True, vmin = -2, vmax = 2, cmap = 'RdBu_r', layer = "scaled",
+                             show = False, swap_axes = False, return_fig = False,
+                             save = ".".join(["matrixplot_mean_z_score", 'svg']))
             sc.pl.matrixplot(self.adata_subset, list(self.adata_subset.var_names), "pheno_leiden",
-                             dendrogram=True, cmap='Blues', standard_scale='var',
-                             colorbar_title='column scaled\nexpression', layer="scaled",
-                             swap_axes=False, return_fig=False,
-                             show=False,
-                             save=".".join(["matrixplot_column_scaled_expression", self.fileformat]))
+                             dendrogram = True, cmap = 'Blues', standard_scale = 'var',
+                             colorbar_title = 'column scaled\nexpression', layer = "scaled",
+                             swap_axes = False, return_fig = False,
+                             show = False,
+                             save = ".".join(["matrixplot_column_scaled_expression", self.fileformat]))
         else:
             pass
 
     def createfcs(self):
         """
-    
+        Function for the generation of fcs files and FlowAI QC
+        return: Anndata with filtered cells
         """
         try:
             self.log.info("Perform Flow Auto QC with FlowAI tool.")
-            df = pd.DataFrame(self.adata.X, columns=self.adata.var.index, index=self.adata.obs.index)
-            #df1 = pd.DataFrame(self.adata.X, columns=self.adata.var.index, index=self.adata.obs.index)
-            # print(df.head())
+            df = pd.DataFrame(self.adata.X, columns = self.adata.var.index, index = self.adata.obs.index)
             self.concatenate_fcs = "/".join([self.output_folder,
-                               "Test_ConcatenatedCells.fcs"])
+                                             "Test_ConcatenatedCells.fcs"])
             if 'Time' in df.columns:
-                fcsy.write_fcs(path=self.concatenate_fcs, df=df)
+                fcsy.write_fcs(path = self.concatenate_fcs, df = df)
                 fnull = open(os.devnull, 'w')
                 subprocess.check_call(['Rscript', '--vanilla',
-                                       self.path_flowai,self.concatenate_fcs,
-                                   self.output_folder], stdout=fnull, stderr=fnull)
-                df =fcsy.read_fcs("/".join([self.output_folder,"V1_concatenate_after_QC.fcs"]))
-                df.set_index(self.adata.obs.index,inplace=True)
-                self.adata2 = sc.AnnData(df)
-                self.adata2.obs = self.adata.obs
-                self.adata = self.adata2.copy()
-                del self.adata2
-                self.adata = self.adata[(self.adata[:,'remove_from_all'].X<10000).flatten(), : ]
-                time_indicator = np.in1d(self.adata.var_names, 'remove_from_all')
-                self.adata = self.adata[:, ~ time_indicator]
+                                       self.path_flowai, self.concatenate_fcs,
+                                       self.output_folder], stdout = fnull, stderr = fnull)
+                df = fcsy.read_fcs("".join([self.output_folder,
+                                            "Test_ConcatenatedCells_concatenate_after_QC.fcs"]))
+                df.set_index(self.adata.obs.index, inplace = True)
+                self.adata.obs['remove_from_FM'] = df['remove_from_FM']
+                self.adata = self.adata[(self.adata.obs['remove_from_FM'] < 10000), :]
                 self.adata.layers['raw_value'] = self.adata.X
+                self.log.info("{0} cells after FlowAI analysis".format(self.adata.shape[0]))
                 return self.adata
             else:
                 # self.log.info("Time channel not found. Skip QC")
                 pass
         except:
+            # print(traceback.format_exc())
             # self.log.info("Impossible to complete Flow Auto QC. Check Time channel.")
             pass
 
@@ -687,23 +695,23 @@ class Cytophenograph:
             if self.scanorama is True:
                 self.adata_subset = self.correct_scanorama()
             else:
-                self.adata_subset.layers['scaled'] = sc.pp.scale(self.adata_subset, max_value=6,
-                                                                 zero_center=True, copy=True).X
+                self.adata_subset.layers['scaled'] = sc.pp.scale(self.adata_subset, max_value = 6,
+                                                                 zero_center = True, copy = True).X
                 self.adata_subset.X = self.adata_subset.layers['scaled']
         else:
             if self.scanorama is True:
                 self.adata_subset = self.correct_scanorama()
             else:
-                self.adata_subset.layers['scaled'] = sc.pp.scale(self.adata_subset, max_value=6,
-                                                                 zero_center=True, copy=True).X
+                self.adata_subset.layers['scaled'] = sc.pp.scale(self.adata_subset, max_value = 6,
+                                                                 zero_center = True, copy = True).X
                 self.adata_subset.X = self.adata_subset.layers['scaled']
-        self.adata_subset.obs['pheno_leiden'], graph, Q = pg.cluster(self.adata_subset.X, k=int(self.k_coef),
-                                                                     seed=42,
-                                                                     clustering_algo="leiden",
-                                                                     directed=True, primary_metric="euclidean",
-                                                                     q_tol=0.05,
-                                                                     prune=False, min_cluster_size=1,
-                                                                     n_jobs=int(self.thread))
+        self.adata_subset.obs['pheno_leiden'], graph, Q = pg.cluster(self.adata_subset.X, k = int(self.k_coef),
+                                                                     seed = 42,
+                                                                     clustering_algo = "leiden",
+                                                                     directed = True, primary_metric = "euclidean",
+                                                                     q_tol = 0.05,
+                                                                     prune = False, min_cluster_size = 1,
+                                                                     n_jobs = int(self.thread))
         self.adata_subset.obs['pheno_leiden'] = self.adata_subset.obs['pheno_leiden'].astype(int) + 1
         self.adata_subset.obs['pheno_leiden'] = self.adata_subset.obs['pheno_leiden'].astype('category')
         self.adata.obs['cluster'] = self.adata_subset.obs['pheno_leiden'].values
@@ -738,20 +746,20 @@ class Cytophenograph:
             if self.scanorama is True:
                 self.adata_subset = self.correct_scanorama()
             else:
-                self.adata_subset.layers['scaled'] = sc.pp.scale(self.adata_subset, max_value=6,
-                                                                 zero_center=True, copy=True).X
+                self.adata_subset.layers['scaled'] = sc.pp.scale(self.adata_subset, max_value = 6,
+                                                                 zero_center = True, copy = True).X
                 self.adata_subset.X = self.adata_subset.layers['scaled']
         else:
             if self.scanorama is True:
                 self.adata_subset = self.correct_scanorama()
             else:
-                self.adata_subset.layers['scaled'] = sc.pp.scale(self.adata_subset, max_value=6,
-                                                                 zero_center=True, copy=True).X
+                self.adata_subset.layers['scaled'] = sc.pp.scale(self.adata_subset, max_value = 6,
+                                                                 zero_center = True, copy = True).X
                 self.adata_subset.X = self.adata_subset.layers['scaled']
-        p = via.VIA(self.adata_subset.X, random_seed=42, knn=int(self.knn), root_user=self.root_user,
-                      jac_std_global='median', jac_weighted_edges=False, distance='l2',
-                      small_pop=10, resolution_parameter=self.resolution,
-                      num_threads=int(self.thread))
+        p = via.VIA(self.adata_subset.X, random_seed = 42, knn = int(self.knn), root_user = self.root_user,
+                    jac_std_global = 'median', jac_weighted_edges = False, distance = 'l2',
+                    small_pop = 10, resolution_parameter = self.resolution,
+                    num_threads = int(self.thread))
         p.run_VIA()
         self.adata_subset.obs['pheno_leiden'] = [str(i) for i in p.labels]
         self.adata_subset.obs['pheno_leiden'] = self.adata_subset.obs['pheno_leiden'].astype(int) + 1
@@ -788,47 +796,47 @@ class Cytophenograph:
                 self.adata_subset = self.correct_scanorama()
             else:
                 self.adata_subset = self.adata[:, self.markertoinclude].copy()
-                self.adata_subset.layers['scaled'] = sc.pp.scale(self.adata_subset, max_value=6,
-                                                                 zero_center=True, copy=True).X
+                self.adata_subset.layers['scaled'] = sc.pp.scale(self.adata_subset, max_value = 6,
+                                                                 zero_center = True, copy = True).X
                 self.adata_subset.X = self.adata_subset.layers['scaled']
         else:
             if self.scanorama is True:
                 self.adata_subset = self.correct_scanorama()
             else:
                 self.adata_subset = self.adata[:, self.markertoinclude].copy()
-                self.adata_subset.layers['scaled'] = sc.pp.scale(self.adata_subset, max_value=6,
-                                                                 zero_center=True, copy=True).X
+                self.adata_subset.layers['scaled'] = sc.pp.scale(self.adata_subset, max_value = 6,
+                                                                 zero_center = True, copy = True).X
                 self.adata_subset.X = self.adata_subset.layers['scaled']
         self.adata_subset.X = self.adata_subset.layers['raw_value']
         tmpdf = self.adata_subset.to_df()
         tmpdf['Time'] = 0
-        tmpdf.to_csv(tmp.name, header=True, index=False)
-        tt = flowsom(tmp.name, if_fcs=False, if_drop=True)
+        tmpdf.to_csv(tmp.name, header = True, index = False)
+        tt = flowsom(tmp.name, if_fcs = False, if_drop = True)
         sample_df = tt.df
         if tt.df.shape[0] > 50000:
-            self.flowsomshape= 20
+            self.flowsomshape = 20
         else:
             self.flowsomshape = 50
         tt.som_mapping(self.flowsomshape, self.flowsomshape, tt.df.shape[1],
-                       sigma=2.5,
-                       lr=0.2,
-                       batch_size=100,
-                       neighborhood='gaussian',
-                       if_fcs=False,
-                       seed=10)
+                       sigma = 2.5,
+                       lr = 0.2,
+                       batch_size = 100,
+                       neighborhood = 'gaussian',
+                       if_fcs = False,
+                       seed = 10)
         from sklearn.cluster import AgglomerativeClustering
         tt.meta_clustering(AgglomerativeClustering,
                            # cluster_class: e.g. KMeans, a cluster class, like "from sklearn.cluster import KMeans"
                            self.minclus,  # min_n: e.g. 10, the min proposed number of clusters
                            self.maxclus,  # max_n: e.g. 31, the max proposed number of clusters
                            10,  # iter_n: e.g 10, the iteration times for each number of clusters
-                           resample_proportion=0.6,
+                           resample_proportion = 0.6,
                            # resample_proportion: e.g 0.6, the proportion of re-sampling when computing clustering
-                           verbose=False  # verbose: e.g. False, whether print out the clustering process
+                           verbose = False  # verbose: e.g. False, whether print out the clustering process
                            )
         tt.labeling()
         output_tf_df = tt.tf_df  # new column added: category
-        output_tf_df.set_index(self.adata.obs.index, inplace=True)
+        output_tf_df.set_index(self.adata.obs.index, inplace = True)
         # clustering ordering
         a = output_tf_df['category'].value_counts()
         a = a.reset_index()
@@ -837,7 +845,7 @@ class Cytophenograph:
         output_tf_df['category'] = output_tf_df['category'].map({v: k for k, v in b["index"].items()})
         # assign
         self.adata_subset.obs['pheno_leiden'] = output_tf_df['category'].values + 1
-        self.adata.obs['cluster'] = output_tf_df['category'].values  + 1
+        self.adata.obs['cluster'] = output_tf_df['category'].values + 1
         # convert to category
         self.adata_subset.obs['pheno_leiden'] = self.adata_subset.obs['pheno_leiden'].astype('category')
         self.adata.obs['Cluster_Flowsom'] = self.adata_subset.obs['pheno_leiden'].astype('category')
@@ -859,143 +867,149 @@ class Cytophenograph:
 
     def generation_concatenate(self):
         """
-
+        Function to concatenate the results of the clustering and the original adata object
+        return: adata object with the results of the clustering
         """
         if self.runtime == 'Full':
             self.tmp_df = pd.merge(pd.DataFrame(self.adata.X,
-                                                columns=self.adata.var_names,
-                                                index=self.adata.obs.index).astype(int),
-                                   pd.DataFrame(self.adata.obsm['X_umap'], columns=['UMAP_1', 'UMAP_2'],
-                                                index=self.adata.obs.index),
-                                   right_index=True,
-                                   left_index=True)
+                                                columns = self.adata.var_names,
+                                                index = self.adata.obs.index).astype(int),
+                                   pd.DataFrame(self.adata.obsm['X_umap'], columns = ['UMAP_1', 'UMAP_2'],
+                                                index = self.adata.obs.index),
+                                   right_index = True,
+                                   left_index = True)
             pd.merge(self.tmp_df, self.adata.obs[['cluster',
                                                   'Sample', 'Cell_type',
                                                   'EXP',
                                                   'ID', 'Time_point',
-                                                  'Condition']], left_index=True,
-                     right_index=True).to_csv("/".join([self.output_folder, ".".join([self.analysis_name, "csv"])]),
-                                              header=True, index=False)
+                                                  'Condition']], left_index = True,
+                     right_index = True).to_csv("/".join([self.output_folder, ".".join([self.analysis_name, "csv"])]),
+                                                header = True, index = False)
         elif self.runtime == 'UMAP':
             self.tmp_df = pd.merge(pd.DataFrame(self.adata.X,
-                                                columns=self.adata.var_names,
-                                                index=self.adata.obs.index).astype(int),
-                                   pd.DataFrame(self.embedding, columns=['UMAP_1', 'UMAP_2'],
-                                                index=self.adata.obs.index),
-                                   right_index=True,
-                                   left_index=True)
+                                                columns = self.adata.var_names,
+                                                index = self.adata.obs.index).astype(int),
+                                   pd.DataFrame(self.embedding, columns = ['UMAP_1', 'UMAP_2'],
+                                                index = self.adata.obs.index),
+                                   right_index = True,
+                                   left_index = True)
             pd.merge(self.tmp_df, self.adata.obs[['Sample', 'Cell_type',
                                                   'EXP',
                                                   'ID', 'Time_point',
-                                                  'Condition']], left_index=True,
-                     right_index=True).to_csv("/".join([self.output_folder, ".".join([self.analysis_name, "csv"])]),
-                                              header=True, index=False)
+                                                  'Condition']], left_index = True,
+                     right_index = True).to_csv("/".join([self.output_folder, ".".join([self.analysis_name, "csv"])]),
+                                                header = True, index = False)
         elif self.runtime == 'Clustering':
             self.tmp_df = pd.merge(pd.DataFrame(self.adata.X,
-                                                columns=self.adata.var_names,
-                                                index=self.adata.obs.index).astype(int),
+                                                columns = self.adata.var_names,
+                                                index = self.adata.obs.index).astype(int),
                                    self.adata.obs[['cluster', 'Sample', 'Cell_type',
                                                    'EXP',
                                                    'ID', 'Time_point',
                                                    'Condition']],
-                                   right_index=True,
-                                   left_index=True)
-            self.tmp_df.to_csv("/".join([self.output_folder, ".".join([self.analysis_name, "csv"])]), header=True, index=False)
+                                   right_index = True,
+                                   left_index = True)
+            self.tmp_df.to_csv("/".join([self.output_folder, ".".join([self.analysis_name, "csv"])]), header = True,
+                               index = False)
 
     def plot_frequency(self):
         """
         Plot barplot with frequency
+        return: barplot with frequency
         """
         if self.runtime != 'UMAP':
-            fig, (ax1) = plt.subplots(1, 1, figsize=(17 / 2.54, 17 / 2.54))
+            self.FREQUENCY_folder = "/".join([self.outfig, "BARPLOT_FREQUENCY"])
+            self.createdir(self.FREQUENCY_folder)
+            fig, (ax1) = plt.subplots(1, 1, figsize = (17 / 2.54, 17 / 2.54))
             ax1 = self.adata_subset.obs.groupby("pheno_leiden")["Sample"].value_counts(
-                normalize=True).unstack().plot.barh(
-                stacked=True,
-                legend=False,
-                ax=ax1,
-                color=self.palette)
+                normalize = True).unstack().plot.barh(
+                stacked = True,
+                legend = False,
+                ax = ax1,
+                color = self.palette)
             ax1.set_xlabel("Percentage Frequency")
             ax1.set_ylabel("Cluster")
             ax1.grid(False)
-            ax1.legend(bbox_to_anchor=(1.2, 1.0))
-            fig.savefig("/".join([self.outfig, ".".join(["ClusterFrequencyNormalized", self.fileformat])]),
-                        dpi=self.dpi, bbox_inches='tight',
-                        format=self.fileformat)
-            fig.savefig("/".join([self.outfig, ".".join(["ClusterFrequencyNormalized", 'svg'])]),
-                        dpi=self.dpi, bbox_inches='tight',
-                        format='svg')
+            ax1.legend(bbox_to_anchor = (1.2, 1.0))
+            ### save
+            fig.savefig("/".join([self.FREQUENCY_folder , ".".join(["ClusterFrequencyNormalized", self.fileformat])]),
+                        dpi = self.dpi, bbox_inches = 'tight',
+                        format = self.fileformat)
+            fig.savefig("/".join([self.FREQUENCY_folder , ".".join(["ClusterFrequencyNormalized", 'svg'])]),
+                        dpi = self.dpi, bbox_inches = 'tight',
+                        format = 'svg')
             #
             for _ in ['Sample', 'Cell_type', 'EXP', 'ID', 'Time_point', 'Condition']:
                 if len(self.adata_subset.obs[_].unique()) > 1:
-                    fig, (ax3) = plt.subplots(1, 1, figsize=(17 / 2.54, 17 / 2.54))
+                    fig, (ax3) = plt.subplots(1, 1, figsize = (17 / 2.54, 17 / 2.54))
                     ax3 = self.adata_subset.T.var.groupby(_)["pheno_leiden"].value_counts(
-                        normalize=True).unstack().plot.barh(
-                        stacked=True,
-                        legend=False,
-                        color=self.palette,
-                        ax=ax3,
-                        fontsize=5)
+                        normalize = True).unstack().plot.barh(
+                        stacked = True,
+                        legend = False,
+                        color = self.palette,
+                        ax = ax3,
+                        fontsize = 5)
                     ax3.set_xlabel("Cluster Percentage Frequency")
                     ax3.set_ylabel(_)
                     ax3.grid(False)
-                    ax3.legend(bbox_to_anchor=(1.2, 1.0))
-                    fig.savefig("/".join([self.outfig, ".".join(["".join([_, "ClusterFrequencyNormalized"]), self.fileformat])]),
-                                dpi=self.dpi, bbox_inches='tight',
-                                format=self.fileformat)
+                    ax3.legend(bbox_to_anchor = (1.2, 1.0))
+                    fig.savefig("/".join(
+                        [self.FREQUENCY_folder , ".".join(["".join([_, "ClusterFrequencyNormalized"]), self.fileformat])]),
+                                dpi = self.dpi, bbox_inches = 'tight',
+                                format = self.fileformat)
             #
-            fig, (ax2) = plt.subplots(1, 1, figsize=(17 / 2.54, 17 / 2.54))
+            fig, (ax2) = plt.subplots(1, 1, figsize = (17 / 2.54, 17 / 2.54))
             ax2 = self.adata_subset.obs.groupby("pheno_leiden")["Sample"].value_counts(
-                normalize=False).unstack().plot.barh(
-                stacked=True,
-                legend=False,
-                ax=ax2,
-                color=self.palette)
+                normalize = False).unstack().plot.barh(
+                stacked = True,
+                legend = False,
+                ax = ax2,
+                color = self.palette)
             ax2.set_xlabel("Relative Frequency")
             ax2.set_ylabel("Cluster")
             ax2.grid(False)
-            ax2.legend(bbox_to_anchor=(1.2, 1.0))
-            fig.savefig("/".join([self.outfig, ".".join(["ClusterFrequencyNotNormalized", self.fileformat])]),
-                        dpi=self.dpi, bbox_inches='tight',
-                        format=self.fileformat)
-            fig.savefig("/".join([self.outfig, ".".join(["ClusterFrequencyNotNormalized", 'svg'])]),
-                        dpi=self.dpi, bbox_inches='tight',
-                        format='svg')
+            ax2.legend(bbox_to_anchor = (1.2, 1.0))
+            fig.savefig("/".join([self.FREQUENCY_folder , ".".join(["ClusterFrequencyNotNormalized", self.fileformat])]),
+                        dpi = self.dpi, bbox_inches = 'tight',
+                        format = self.fileformat)
+            fig.savefig("/".join([self.FREQUENCY_folder , ".".join(["ClusterFrequencyNotNormalized", 'svg'])]),
+                        dpi = self.dpi, bbox_inches = 'tight',
+                        format = 'svg')
             self.plot_frequency_ptz()
         else:
             pass
 
     def plot_frequency_ptz(self):
         """
-
-        Returns:
-
+        Function to plot frequency of clusters per time point and per condition
+        Returns: barplot with frequency per time point and per condition
         """
         if len(self.adata_subset.obs["ID"].unique()) > 1:
             self.dfxlinkage = self.adata_subset.obs.groupby("ID")["pheno_leiden"].value_counts(
-                normalize=True).unstack() * 100
+                normalize = True).unstack() * 100
             Z = linkage(self.dfxlinkage, 'ward',
-                        optimal_ordering=True)
-            dn = dendrogram(Z, get_leaves=True, orientation='left', labels=self.dfxlinkage.index,
-                            no_plot=True)
-            fig, (ax1, ax2) = plt.subplots(1, 2, constrained_layout=True, figsize=(20, 10))
-            dn = dendrogram(Z, get_leaves=True, orientation='left', labels=self.dfxlinkage.index,
-                            color_threshold=0, above_threshold_color='k', ax=ax1)
-            self.dfxlinkage.loc[dn['ivl']].plot.barh(legend=False, stacked=True, ax=ax2, color=self.palette)
-            ax1.set(yticklabels=[])
-            ax1.set(xticklabels=[])
+                        optimal_ordering = True)
+            dn = dendrogram(Z, get_leaves = True, orientation = 'left', labels = self.dfxlinkage.index,
+                            no_plot = True)
+            fig, (ax1, ax2) = plt.subplots(1, 2, constrained_layout = True, figsize = (20, 10))
+            dn = dendrogram(Z, get_leaves = True, orientation = 'left', labels = self.dfxlinkage.index,
+                            color_threshold = 0, above_threshold_color = 'k', ax = ax1)
+            self.dfxlinkage.loc[dn['ivl']].plot.barh(legend = False, stacked = True, ax = ax2, color = self.palette)
+            ax1.set(yticklabels = [])
+            ax1.set(xticklabels = [])
             ax1.grid(False)
-            ax2.tick_params(left=False)
+            ax2.tick_params(left = False)
             ax2.grid(False)
             ax1.axis('off')
             ax2.set_ylabel(" ")
             ax2.set_xlabel("Percentage Frequency")
-            ax2.legend(bbox_to_anchor=(1.2, 1.0), title='Cluster')
+            ax2.legend(bbox_to_anchor = (1.2, 1.0), title = 'Cluster')
             ax2.spines['top'].set_visible(False)
             ax2.spines['right'].set_visible(False)
             ax2.spines['left'].set_visible(False)
-            fig.savefig("/".join([self.outfig, ".".join(["SampleFrequencyClusterized", self.fileformat])]),
-                        dpi=self.dpi, bbox_inches='tight',
-                        format=self.fileformat)
+            fig.savefig("/".join([self.FREQUENCY_folder , ".".join(["SampleFrequencyClusterized", self.fileformat])]),
+                        dpi = self.dpi, bbox_inches = 'tight',
+                        format = self.fileformat)
         else:
             pass
 
@@ -1011,7 +1025,6 @@ class Cytophenograph:
     def groupbycluster(self):
         """
         Function for generation of csv with different clusters
-        :parm tool:
         :return:
         """
         # make dir
@@ -1022,17 +1035,21 @@ class Cytophenograph:
             self.tmp = self.adata[self.adata.obs['cluster'].isin([_])].to_df()
             self.tmp = self.tmp.astype(int)
             if self.runtime == 'Full':
-                self.tmp['UMAP_1'] = pd.DataFrame(self.adata[self.adata.obs['cluster'].isin([_])].obsm['X_umap'][:, 0]).set_index(self.tmp.index)
-                self.tmp['UMAP_2'] = pd.DataFrame(self.adata[self.adata.obs['cluster'].isin([_])].obsm['X_umap'][:, 1]).set_index(self.tmp.index)
+                self.tmp['UMAP_1'] = pd.DataFrame(
+                    self.adata[self.adata.obs['cluster'].isin([_])].obsm['X_umap'][:, 0]).set_index(self.tmp.index)
+                self.tmp['UMAP_2'] = pd.DataFrame(
+                    self.adata[self.adata.obs['cluster'].isin([_])].obsm['X_umap'][:, 1]).set_index(self.tmp.index)
             if (self.tool == "Phenograph"):
                 self.tmp['Phenograph'] = _
             elif (self.tool == "VIA"):
                 self.tmp['VIA'] = _
             else:
                 self.tmp['FlowSOM'] = _
-            self.tmp.to_csv("/".join([self.output_folder, "".join(["CSVcluster", self.tool]), "".join([self.analysis_name, "_", str(_), ".csv"])]), header=True, index=False)
-            fcsy.write_fcs(self.tmp,"/".join([self.output_folder, "".join(["FCScluster", self.tool]),
-                                      "".join([self.analysis_name, "_", str(_), ".fcs"])]))
+            self.tmp.to_csv("/".join([self.output_folder, "".join(["CSVcluster", self.tool]),
+                                      "".join([self.analysis_name, "_", str(_), ".csv"])]), header = True,
+                            index = False)
+            fcsy.write_fcs(self.tmp, "/".join([self.output_folder, "".join(["FCScluster", self.tool]),
+                                               "".join([self.analysis_name, "_", str(_), ".fcs"])]))
 
     def groupbysample(self):
         """
@@ -1045,7 +1062,7 @@ class Cytophenograph:
         self.tmp = self.adata.to_df()
         self.tmp = self.tmp.astype(int)
         # change index
-        self.tmp.set_index(self.adata.obs['Sample'], inplace=True)
+        self.tmp.set_index(self.adata.obs['Sample'], inplace = True)
         if self.runtime != 'UMAP':
             self.adata.obs['cluster'] = self.adata.obs['cluster'].astype(int)
             self.createdir("/".join([self.output_folder, "".join(["ClusterFrequency", self.tool])]))
@@ -1061,11 +1078,11 @@ class Cytophenograph:
             # get unique number of cluster
             unique_Phenograph = self.adata.obs['cluster'].unique()
             #
-            dfCounts = pd.DataFrame(index=range(min(unique_Phenograph), max(unique_Phenograph) + 1))
+            dfCounts = pd.DataFrame(index = range(min(unique_Phenograph), max(unique_Phenograph) + 1))
             # generate Tot_percentage file
             for i in range(len(unique_filename)):
                 dfCounts[unique_filename[i]] = self.tmp.loc[self.tmp.index == unique_filename[i]].cluster.value_counts(
-                    normalize=True).reindex(self.tmp.cluster.unique(), fill_value=0)
+                    normalize = True).reindex(self.tmp.cluster.unique(), fill_value = 0)
             # compute percentage
             dfCounts = dfCounts * 100
             # save
@@ -1073,11 +1090,12 @@ class Cytophenograph:
             dfCounts.to_csv("/".join(["/".join([self.output_folder, "".join(["ClusterFrequency", self.tool])]),
                                       "".join(["TotalPercentage", ".csv"])]))
             # create empty dataframe
-            dfCounts = pd.DataFrame(index=range(min(unique_Phenograph), max(unique_Phenograph) + 1))
+            dfCounts = pd.DataFrame(index = range(min(unique_Phenograph), max(unique_Phenograph) + 1))
             # generate Tot_counts file
             for i in range(len(unique_filename)):
-                dfCounts[unique_filename[i]] = self.tmp.loc[self.tmp.index == unique_filename[i]].cluster.value_counts().reindex(
-                    self.tmp.cluster.unique(), fill_value=0)
+                dfCounts[unique_filename[i]] = self.tmp.loc[
+                    self.tmp.index == unique_filename[i]].cluster.value_counts().reindex(
+                    self.tmp.cluster.unique(), fill_value = 0)
             # save
             dfCounts.index.name = 'Cluster'
             dfCounts.to_csv("/".join(["/".join([self.output_folder, "".join(["ClusterFrequency", self.tool])]),
@@ -1089,10 +1107,11 @@ class Cytophenograph:
                     "/".join([self.output_folder, "".join(["CSVsample", self.tool]),
                               "".join([str(unique_filename[i]), "_", self.analysis_name,
                                        ".csv"])]),
-                    header=True, index=False)
-                fcsy.write_fcs(self.tmp.loc[self.tmp.index == unique_filename[i]],"/".join([self.output_folder, "".join(["FCSsample", self.tool]),
-                              "".join([str(unique_filename[i]), "_", self.analysis_name,
-                                       ".fcs"])])
+                    header = True, index = False)
+                fcsy.write_fcs(self.tmp.loc[self.tmp.index == unique_filename[i]],
+                               "/".join([self.output_folder, "".join(["FCSsample", self.tool]),
+                                         "".join([str(unique_filename[i]), "_", self.analysis_name,
+                                                  ".fcs"])])
                                )
 
         else:
@@ -1102,7 +1121,7 @@ class Cytophenograph:
                     "/".join([self.output_folder, "".join(["CSVsample", self.tool]),
                               "".join([str(unique_filename[i]), "_", self.analysis_name,
                                        ".csv"])]),
-                    header=True, index=False)
+                    header = True, index = False)
             fcsy.write_fcs(self.tmp.loc[self.tmp.index == unique_filename[i]],
                            "/".join([self.output_folder, "".join(["Sample", self.tool]),
                                      "".join([str(unique_filename[i]), "_", self.analysis_name, ".fcs"])]))
@@ -1123,9 +1142,9 @@ class Cytophenograph:
             self.log.info("Markers excluded for UMAP computation:")
         for i in self.marker_array:
             self.log.info(" - " + i)
-        self.adata_subset.layers['scaled'] = sc.pp.scale(self.adata_subset, max_value=6,
-                                                         zero_center=True, copy=True).X
-        #self.adata_subset.X = self.adata_subset.layers['scaled']
+        self.adata_subset.layers['scaled'] = sc.pp.scale(self.adata_subset, max_value = 6,
+                                                         zero_center = True, copy = True).X
+        # self.adata_subset.X = self.adata_subset.layers['scaled']
         if self.scanorama is True:
             self.adata_subset = self.correct_scanorama()
             self.embedding = self.runumap()
@@ -1145,7 +1164,7 @@ class Cytophenograph:
         """
         self.log.warning("PART 4")
         self.log.info("Output Generation")
-        self.scaler = MinMaxScaler(feature_range=(0, 1))
+        self.scaler = MinMaxScaler(feature_range = (0, 1))
         if self.runtime != 'UMAP':
             if self.tool == "Phenograph":
                 self.adata.obs[self.tool + "_" + str(self.k_coef)] = self.adata.obs['cluster'].astype("str")
@@ -1155,7 +1174,7 @@ class Cytophenograph:
                     "".join([str(self.tool), "_cluster"])].astype('category')
                 self.adata.layers['scaled01'] = self.scaler.fit_transform(self.adata.layers['raw_value'])
                 self.adata.X = self.adata.layers['scaled01']
-                self.adata.layers['scaled01'] =scipy.sparse.csr_matrix(self.adata.layers['scaled01'])
+                self.adata.layers['scaled01'] = scipy.sparse.csr_matrix(self.adata.layers['scaled01'])
                 self.adata.write("/".join([self.output_folder, ".".join([self.analysis_name, "h5ad"])]))
             elif self.tool == "VIA":
                 self.adata.obs[self.tool + "_" + str(self.knn)] = self.adata.obs['cluster'].astype("str")
