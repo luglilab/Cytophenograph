@@ -19,12 +19,9 @@ from sklearn.preprocessing import MinMaxScaler
 import fcsy
 from fcsy import DataFrame
 import subprocess
-import numpy as np
 from scipy.cluster.hierarchy import dendrogram, linkage
-
 matplotlib.use('Agg')
-from version import __version__
-
+import seaborn as sns
 warnings.filterwarnings('ignore')
 # import traceback
 
@@ -86,7 +83,7 @@ class Cytophenograph:
         self.scanorama = batch
         self.batchcov = batchcov
         self.runtime = runtime
-
+        self.cleaning = {}
         if self.tool == "Phenograph":
             self.k_coef = k_coef
         if self.tool == "VIA":
@@ -243,9 +240,6 @@ class Cytophenograph:
         ]
 
         if self.runtime == 'UMAP': self.tool = 'UMAP'
-
-        # self.log.info("Script name: Cytophenograph" )
-        # self.log.info("Script version: " + __version__)
         self.log.info("Runtime: {}".format(self.runtime))
         self.log.info("DownSampling: {}".format(self.downsampling))
         if self.downsampling != 'All':
@@ -267,8 +261,6 @@ class Cytophenograph:
                 df = df.sample(n = int(self.cellnumber), random_state = 42,
                                ignore_index = True)
             else:
-                # self.log.info(
-                #    "It was not possible to downsample because the fixed number of events is greater than the original number of events. Decrease the threshold for downsampling.")
                 pass
         barcode = []
         names = os.path.basename(path_csv_file)
@@ -411,8 +403,26 @@ class Cytophenograph:
                 sc.pp.subsample(self.adata, n_obs = self.cellnumber, random_state = 42)
             else:
                 pass
+        self.cleaning.update({"Before QC":self.adata.shape[0]})
         self.log.info("{0} cells undergo to clustering analysis".format(self.adata.shape[0]))
         return self.adata
+
+    def create_barplot(self):
+        """
+        Create a barplot and export with the self.cleaning dictionary
+        :return:
+        """
+        self.outfig = "/".join([self.output_folder, "".join(["Figures", self.tool])])
+        self.createdir(self.outfig)
+        self.QC_folder = "/".join([self.outfig, "QC_PLOTS"])
+        self.createdir(self.QC_folder)
+        ax = sns.barplot(data = pd.DataFrame.from_dict(self.cleaning, orient = 'index').reset_index(),
+                    y = 0, x = 'index')
+        ax.bar_label(ax.containers[0], fmt = '%.0f')
+        plt.grid(False)
+        plt.ylabel("Number of cells")
+        plt.xlabel("Cleaning steps")
+        plt.savefig(self.QC_folder+ "/cleaning.png", dpi = 300, bbox_inches = 'tight')
 
     def correct_scanorama(self):
         """
@@ -506,8 +516,6 @@ class Cytophenograph:
         """
         if self.runtime == 'Full':
             # create output directory
-            self.outfig = "/".join([self.output_folder, "".join(["Figures", self.tool])])
-            self.createdir(self.outfig)
             self.UMAP_folder = "/".join([self.outfig, "UMAP"])
             self.createdir(self.UMAP_folder)
             sc.settings.figdir = self.UMAP_folder
@@ -573,8 +581,6 @@ class Cytophenograph:
             # save=".".join(["".join([str(self.tool), "_ALL"]), self.fileformat])
             # )
         elif self.runtime == 'UMAP':
-            self.createdir("/".join([self.output_folder, "".join(["Figures", self.tool])]))
-            self.outfig = "/".join([self.output_folder, "".join(["Figures", self.tool])])
             sc.settings.figdir = self.outfig
             scaler = MinMaxScaler(feature_range = (0, 1))
             self.adata_subset.layers['scaled01'] = scaler.fit_transform(self.adata_subset.layers['raw_value'])
@@ -614,8 +620,7 @@ class Cytophenograph:
                 else:
                     continue
         elif self.runtime == 'Clustering':
-            self.createdir("/".join([self.output_folder, "".join(["Figures", self.tool])]))
-            self.outfig = "/".join([self.output_folder, "".join(["Figures", self.tool])])
+            pass
 
     def matrixplot(self):
         """
@@ -666,6 +671,8 @@ class Cytophenograph:
                 self.adata = self.adata[(self.adata.obs['remove_from_FM'] < 10000), :]
                 self.adata.layers['raw_value'] = self.adata.X
                 self.log.info("{0} cells after FlowAI analysis".format(self.adata.shape[0]))
+                self.cleaning.update({ "After QC": self.adata.shape[0]})
+                self.create_barplot()
                 return self.adata
             else:
                 # self.log.info("Time channel not found. Skip QC")
