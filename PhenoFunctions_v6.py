@@ -32,7 +32,6 @@ sc.settings.set_figure_params(dpi = 300, facecolor = 'white', dpi_save = 330,
 sc.settings.verbosity = 0
 warnings.filterwarnings("ignore", category = FutureWarning)
 from palette import palette28,palette102
-import CosTaL as ct
 
 class CustomFormatter(logging.Formatter):
     FORMATS = {
