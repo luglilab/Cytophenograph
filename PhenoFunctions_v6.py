@@ -24,15 +24,15 @@ matplotlib.use('Agg')
 import seaborn as sns
 warnings.filterwarnings('ignore')
 # import traceback
-
-
+import numpy as np
 tmp = tempfile.NamedTemporaryFile()
 sc.settings.autoshow = False
 sc.settings.set_figure_params(dpi = 300, facecolor = 'white', dpi_save = 330,
                               figsize = (10, 10))
 sc.settings.verbosity = 0
 warnings.filterwarnings("ignore", category = FutureWarning)
-
+from palette import palette28,palette102
+import CosTaL as ct
 
 class CustomFormatter(logging.Formatter):
     FORMATS = {
@@ -84,6 +84,7 @@ class Cytophenograph:
         self.batchcov = batchcov
         self.runtime = runtime
         self.cleaning = {}
+        self.target_cells = 0.1
         if self.tool == "Phenograph":
             self.k_coef = k_coef
         if self.tool == "VIA":
@@ -105,139 +106,8 @@ class Cytophenograph:
         ch = logging.StreamHandler()
         ch.setFormatter(CustomFormatter())
         self.log.addHandler(ch)
-
-        self.palette28 = ["#08519c",  # Blue 1
-                          "#ff7f0e",  # Orange 1
-                          "#1f6836",  # Green 1
-                          "#514888",  # Purple 1
-                          "#b30000",  # Red 1
-                          "#5a3730",  # Brown 1
-                          "#d638a6",  # Pink 1
-                          "#595959",  # Grey 1
-                          "#7c7c16",  # Green 1
-                          "#77e398",  # Light Green
-                          "#3182bd",  # Blue 2
-                          "#9e3a09",  # Orange 2
-                          "#31a354",  # Green 2
-                          "#756bb1",  # Purple 2
-                          "#ff0000",  # Red 2
-                          "#8c564b",  # Brown 2
-                          "#e377c2",  # Pink 2
-                          "#808080",  # Grey 2
-                          "#bcbd22",  # Green 2
-                          "#85b5d3",  # Blue 3
-                          "#ffa85b",  # Orange 3
-                          "#55cc79",  # Green 3
-                          "#a49dcb",  # Purple 3
-                          "#ff4d4d",  # Red 3
-                          "#b37c71",  # Brown 3
-                          "#f0b6de",  # Pink 3
-                          "#a6a6a6",  # Grey 3
-                          "#dedf4d"]  # Green 3
-        self.palette102 = [
-            "#FFFF00",
-            "#1CE6FF",
-            "#FF34FF",
-            "#FF4A46",
-            "#008941",
-            "#006FA6",
-            "#A30059",
-            "#FFDBE5",
-            "#7A4900",
-            "#0000A6",
-            "#63FFAC",
-            "#B79762",
-            "#004D43",
-            "#8FB0FF",
-            "#997D87",
-            "#5A0007",
-            "#809693",
-            "#6A3A4C",
-            "#1B4400",
-            "#4FC601",
-            "#3B5DFF",
-            "#4A3B53",
-            "#FF2F80",
-            "#61615A",
-            "#BA0900",
-            "#6B7900",
-            "#00C2A0",
-            "#FFAA92",
-            "#FF90C9",
-            "#B903AA",
-            "#D16100",
-            "#DDEFFF",
-            "#000035",
-            "#7B4F4B",
-            "#A1C299",
-            "#300018",
-            "#0AA6D8",
-            "#013349",
-            "#00846F",
-            "#372101",
-            "#FFB500",
-            "#C2FFED",
-            "#A079BF",
-            "#CC0744",
-            "#C0B9B2",
-            "#C2FF99",
-            "#001E09",
-            "#00489C",
-            "#6F0062",
-            "#0CBD66",
-            "#EEC3FF",
-            "#456D75",
-            "#B77B68",
-            "#7A87A1",
-            "#788D66",
-            "#885578",
-            "#FAD09F",
-            "#FF8A9A",
-            "#D157A0",
-            "#BEC459",
-            "#456648",
-            "#0086ED",
-            "#886F4C",
-            "#34362D",
-            "#B4A8BD",
-            "#00A6AA",
-            "#452C2C",
-            "#636375",
-            "#A3C8C9",
-            "#FF913F",
-            "#938A81",
-            "#575329",
-            "#00FECF",
-            "#B05B6F",
-            "#8CD0FF",
-            "#3B9700",
-            "#04F757",
-            "#C8A1A1",
-            "#1E6E00",
-            "#7900D7",
-            "#A77500",
-            "#6367A9",
-            "#A05837",
-            "#6B002C",
-            "#772600",
-            "#D790FF",
-            "#9B9700",
-            "#549E79",
-            "#FFF69F",
-            "#201625",
-            "#72418F",
-            "#BC23FF",
-            "#99ADC0",
-            "#3A2465",
-            "#922329",
-            "#5B4534",
-            "#FDE8DC",
-            "#404E55",
-            "#0089A3",
-            "#CB7E98",
-            "#A4E804",
-            "#324E72",
-        ]
+        self.palette28 = palette28
+        self.palette102 = palette102
 
         if self.runtime == 'UMAP': self.tool = 'UMAP'
         self.log.info("Runtime: {}".format(self.runtime))
@@ -509,6 +379,23 @@ class Cytophenograph:
         else:
             self.log.info("Skipping UMAP (Uniform Manifold Approximation and Projection) generation")
 
+    def subsample_adata_plotting(self):
+        """
+        Function for subsample adata for plotting
+        Returns: anndata object
+
+        """
+        if self.runtime != 'Clustering':
+            adatas = [self.adata_subset[self.adata_subset.obs['pheno_leiden'].astype("category").isin([clust])] for clust in
+                      self.adata_subset.obs['pheno_leiden'].astype("category").cat.categories]
+            for dat in adatas:
+                    sc.pp.subsample(dat, fraction = self.target_cells, random_state = 42)
+
+            self.adata_downsampled = adatas[0].concatenate(*adatas[1:])
+            # return self.adata_downsampled
+        else:
+            self.log.info("Skipping subsampling adata for plotting")
+
     def plot_umap(self):
         """
         Function per generation of pdf files with umap plot
@@ -573,13 +460,6 @@ class Cytophenograph:
                                title = _, cmap = 'turbo', groups = [_],
                                save = ".".join([''.join(e for e in _ if e.isalnum()), self.fileformat])
                                )
-            # self.listmarkerplot = ['pheno_leiden']
-            # for _ in range(len(list(self.adata_subset.var_names))):
-            # self.listmarkerplot.append(list(self.adata_subset.var_names)[_])
-            # sc.pl.umap(self.adata_subset, color=self.listmarkerplot, show=False, layer="scaled01",
-            # legend_fontoutline=1, na_in_legend=False, s=30, cmap='turbo',
-            # save=".".join(["".join([str(self.tool), "_ALL"]), self.fileformat])
-            # )
         elif self.runtime == 'UMAP':
             sc.settings.figdir = self.outfig
             scaler = MinMaxScaler(feature_range = (0, 1))
@@ -590,16 +470,6 @@ class Cytophenograph:
                            title = _, cmap = 'turbo', groups = [_],
                            save = ".".join([''.join(e for e in _ if e.isalnum()), self.fileformat])
                            )
-            # sc.pl.umap(self.adata_subset, color=list(self.adata_subset.var_names), show=False, layer="scaled01",
-            #            legend_fontoutline=1, na_in_legend=False, s=30,
-            #            title=_, cmap='turbo', groups=[_],
-            #            save=".".join(["".join([str(self.tool), "_ALL"]), self.fileformat])
-            #            )
-            # sc.pl.umap(self.adata_subset, color=list(self.adata_subset.var_names), show=False, layer="scaled01",
-            #            legend_fontoutline=1, na_in_legend=False, s=30,
-            #            title=_, cmap='turbo', groups=[_],
-            #            save=".".join(["".join([str(self.tool), "_ALL"]), 'svg'])
-            #            )
             for _ in ['Sample', 'Cell_type', 'EXP', 'ID', 'Time_point', 'Condition']:
                 if len(self.adata_subset.obs[_].unique()) > 1:
                     sc.pl.umap(self.adata_subset, color = _,
@@ -620,6 +490,134 @@ class Cytophenograph:
                 else:
                     continue
         elif self.runtime == 'Clustering':
+            pass
+    def plot_cell_clusters(self):
+        if self.runtime == 'Full':
+            self.umap = pd.DataFrame(self.adata_downsampled.obsm['X_umap'], index = self.adata_downsampled.obs_names)
+            clusters = self.adata_downsampled.obs['pheno_leiden']
+            tsne = self.umap.copy()
+            tsne.columns = ['x', 'y']
+
+            # Cluster colors
+            n_clusters = len(set(clusters))
+            cluster_colors = pd.Series(
+                sns.color_palette(self.palette, n_clusters), index = set(clusters)
+            )
+
+            # Set up figure
+            n_cols = 6
+            n_rows = int(np.ceil(n_clusters / n_cols))
+            fig = plt.figure(figsize = [2 * n_cols, 2 * (n_rows + 2)], dpi = 300)
+            gs = plt.GridSpec(
+                n_rows + 2, n_cols, height_ratios = np.append([0.75, 0.75], np.repeat(1, n_rows))
+            )
+
+            # Clusters
+            ax = plt.subplot(gs[0:2, 2:4])
+            ax.scatter(tsne["x"], tsne["y"], s = 6, color = cluster_colors[clusters[tsne.index]])
+            ax.set_axis_off()
+
+            # Branch probabilities
+            for i, cluster in enumerate(set(clusters)):
+                row = int(np.floor(i / n_cols))
+                ax = plt.subplot(gs[row + 2, i % n_cols])
+                ax.scatter(tsne.loc[:, "x"], tsne.loc[:, "y"], s = 3, color = "lightgrey")
+                cells = clusters.index[clusters == cluster]
+                ax.scatter(
+                    tsne.loc[cells, "x"],
+                    tsne.loc[cells, "y"],
+                    s = 3,
+                    color = cluster_colors[cluster],
+                )
+                ax.set_axis_off()
+                ax.set_title(cluster, fontsize = 10)
+            fig.tight_layout()
+            fig.savefig("".join([self.UMAP_folder, ".".join(["/umapCELL_clusters_all", self.fileformat])]))
+            plt.close(fig)
+        else:
+            pass
+
+    def plot_umap_expression(self):
+        if self.runtime == 'Full':
+            self.subsample_adata_plotting()
+            self.adata_downsampled.obs['Clustering'] = self.adata_downsampled.obs['pheno_leiden'].astype(str)
+            sc.pl.umap(self.adata_downsampled,
+                       color = ['Clustering'] + list(self.adata_downsampled.var_names),
+                       show = False,
+                       layer = "scaled01",
+                       legend_fontoutline = 1,frameon=False,
+                       na_in_legend = False, s = 50, cmap = 'turbo',
+                       save = ".".join(["".join([str(self.tool), "_ALL"]), self.fileformat])
+                       )
+            sc.pl.umap(self.adata_downsampled,
+                       color = ['Clustering'] + list(self.adata_downsampled.var_names),
+                       show = False,
+                       layer = "scaled01",
+                       legend_fontoutline = 1,frameon=False,
+                       na_in_legend = False, s = 50, cmap = 'turbo',
+                       save = ".".join(["".join([str(self.tool), "_ALL"]), 'svg'])
+                       )
+        else:
+            pass
+    def find_obs_not_unique(self):
+        """
+        Find obs columns that are not unique
+        Returns: list of obs columns that are not unique
+
+        """
+        self.obs_not_unique = []
+        for _ in self.adata_downsampled.obs.columns:
+            if len(self.adata_downsampled.obs[_].unique()) == 1:
+                self.obs_not_unique.append(_)
+            else:
+                continue
+        return self.obs_not_unique
+
+    def plot_cell_obs(self):
+        if self.runtime == 'Full':
+            for _ in ['Cell_type', 'EXP', 'Time_point', 'Condition']:
+                if len(self.adata_subset.obs[_].unique()) > 1:
+                    clusters = self.adata_downsampled.obs[_]
+                    tsne = self.umap.copy()
+                    tsne.columns = ['x', 'y']
+                    # Cluster colors
+                    n_clusters = len(set(clusters))
+                    cluster_colors = pd.Series(
+                        sns.color_palette(self.palette, n_clusters), index = set(clusters))
+
+                    # Set up figure
+                    if len(self.adata_subset.obs[_].unique()) >= 6:
+                        n_cols = 6
+                    else:
+                        n_cols = len(self.adata_subset.obs[_].unique())
+                    n_rows = int(np.ceil(n_clusters / n_cols))
+                    fig = plt.figure(figsize = [2 * n_cols, 2 * (n_rows + 2)], dpi = 300, constrained_layout = True)
+                    gs = plt.GridSpec(
+                        n_rows + 2, n_cols, height_ratios = np.append([0.75, 0.75], np.repeat(1, n_rows))
+                    )
+
+                    # Clusters
+                    ax = plt.subplot(gs[0:2, int(n_cols / 2)])
+                    ax.scatter(tsne["x"], tsne["y"], s = 6, color = cluster_colors[clusters[tsne.index]])
+                    ax.set_axis_off()
+
+                    # Branch probabilities
+                    for i, cluster in enumerate(set(clusters)):
+                        row = int(np.floor(i / n_cols))
+                        ax = plt.subplot(gs[row + 2, i % n_cols])
+                        ax.scatter(tsne.loc[:, "x"], tsne.loc[:, "y"], s = 3, color = "lightgrey")
+                        cells = clusters.index[clusters == cluster]
+                        ax.scatter(
+                            tsne.loc[cells, "x"],
+                            tsne.loc[cells, "y"],
+                            s = 3,
+                            color = cluster_colors[cluster])
+                        ax.set_axis_off()
+                        ax.set_title(cluster, fontsize = 10)
+                    fig.savefig(
+                        "".join([self.UMAP_folder, ".".join(["/umapCELL_" + str(_) + "_all", self.fileformat])]))
+                    plt.close(fig)
+        else:
             pass
 
     def matrixplot(self):
@@ -729,7 +727,10 @@ class Cytophenograph:
             self.adata_subset.obsm['X_umap'] = self.embedding
         self.generation_concatenate()
         self.plot_umap()
+        self.plot_umap_expression()
         self.plot_frequency()
+        self.plot_cell_clusters()
+        self.plot_cell_obs()
         self.matrixplot()
         return self.adata
 
@@ -779,7 +780,10 @@ class Cytophenograph:
             self.adata_subset.obsm['X_umap'] = self.embedding
         self.generation_concatenate()
         self.plot_umap()
+        self.plot_umap_expression()
         self.plot_frequency()
+        self.plot_cell_clusters()
+        self.plot_cell_obs()
         self.matrixplot()
         return self.adata
 
@@ -868,7 +872,10 @@ class Cytophenograph:
                     self.adata = self.adata[~self.adata.obs['Cluster_Flowsom'].isin([_]), :]
         self.generation_concatenate()
         self.plot_umap()
+        self.plot_umap_expression()
         self.plot_frequency()
+        self.plot_cell_clusters()
+        self.plot_cell_obs()
         self.matrixplot()
         return self.adata
 
