@@ -460,6 +460,7 @@ class Cytophenograph:
                                save = ".".join([''.join(e for e in _ if e.isalnum()), self.fileformat])
                                )
         elif self.runtime == 'UMAP':
+            self.outfig = "/".join([self.output_folder, "".join(["Figures", self.tool])])
             sc.settings.figdir = self.outfig
             scaler = MinMaxScaler(feature_range = (0, 1))
             self.adata_subset.layers['scaled01'] = scaler.fit_transform(self.adata_subset.layers['raw_value'])
@@ -488,6 +489,7 @@ class Cytophenograph:
                                    )
                 else:
                     continue
+            self.plot_cell_obs()
         elif self.runtime == 'Clustering':
             pass
     def plot_cell_clusters(self):
@@ -1178,6 +1180,10 @@ class Cytophenograph:
         self.log.warning("PART 4")
         self.log.info("Output Generation")
         self.scaler = MinMaxScaler(feature_range = (0, 1))
+        try:
+            del self.adata.obs['remove_from_FM']
+        except:
+            pass
         if self.runtime != 'UMAP':
             if self.tool == "Phenograph":
                 self.adata.obs[self.tool + "_" + str(self.k_coef)] = self.adata.obs['cluster'].astype("str")
