@@ -32,7 +32,7 @@ sc.settings.set_figure_params(dpi = 300, facecolor = 'white', dpi_save = 330,
 sc.settings.verbosity = 0
 warnings.filterwarnings("ignore", category = FutureWarning)
 from palette import palette28,palette102
-
+import scprep
 class CustomFormatter(logging.Formatter):
     FORMATS = {
         logging.INFO: "###%(msg)s",
@@ -50,7 +50,7 @@ class CustomFormatter(logging.Formatter):
 class Cytophenograph:
     def __init__(self, info_file, input_folder, output_folder, k_coef, marker_list, analysis_name, thread, tool, batch,
                  batchcov, mindist, spread, runtime, knn, resolution, minclus, maxclus, downsampling, cellnumber,
-                 filetype):
+                 filetype,arcsinh):
         self.info_file = info_file
         self.input_folder = input_folder
         self.output_folder = output_folder
@@ -100,6 +100,10 @@ class Cytophenograph:
         self.downsampling = downsampling
         self.cellnumber = cellnumber
         self.filetype = filetype
+        if self.filetype == "FCS":
+            self.arcsinh = arcsinh
+        else:
+            self.arcsinh = False
         self.root_user = [1]
 
         ch = logging.StreamHandler()
@@ -275,6 +279,10 @@ class Cytophenograph:
         self.cleaning.update({"Before QC":self.adata.shape[0]})
         self.log.info("{0} cells undergo to clustering analysis".format(self.adata.shape[0]))
         return self.adata
+
+    def transformation(self):
+        if (self.filetype == "FCS") and (self.arcsinh == True):
+            self.adata.layers['arcin'] = scprep.transform.arcsinh(self.adata.X, cofactor=150)
 
     def create_barplot(self):
         """
@@ -492,6 +500,7 @@ class Cytophenograph:
             self.plot_cell_obs()
         elif self.runtime == 'Clustering':
             pass
+
     def plot_cell_clusters(self):
         if self.runtime == 'Full':
             self.umap = pd.DataFrame(self.adata_downsampled.obsm['X_umap'], index = self.adata_downsampled.obs_names)
@@ -697,6 +706,10 @@ class Cytophenograph:
             self.log.info("Markers excluded for Phenograph clustering:")
         for i in self.marker_array:
             self.log.info(" - " + i)
+        if (self.filetype == "FCS") and (self.arcsinh == True):
+            self.adata_subset = scprep.transform.arcsinh(self.adata_subset.X, cofactor=150)
+        else:
+            pass
         if self.runtime != 'Clustering':
             if self.scanorama is True:
                 self.adata_subset = self.correct_scanorama()
@@ -751,6 +764,10 @@ class Cytophenograph:
             self.log.info("Markers excluded for VIA clustering:")
         for i in self.marker_array:
             self.log.info(" - " + i)
+        if (self.filetype == "FCS") and (self.arcsinh == True):
+            self.adata_subset = scprep.transform.arcsinh(self.adata_subset.X, cofactor=150)
+        else:
+            pass
         if self.runtime != 'Clustering':
             if self.scanorama is True:
                 self.adata_subset = self.correct_scanorama()
@@ -803,6 +820,10 @@ class Cytophenograph:
             self.log.info("Markers excluded for FlowSOM clustering:")
         for i in self.marker_array:
             self.log.info(" - " + i)
+        if (self.filetype == "FCS") and (self.arcsinh == True):
+            self.adata_subset = scprep.transform.arcsinh(self.adata_subset.X, cofactor=150)
+        else:
+            pass
         if self.runtime != 'Clustering':
             if self.scanorama is True:
                 self.adata_subset = self.correct_scanorama()
