@@ -9,7 +9,7 @@ import scanpy as sc
 import pyVIA.core as via
 import umap
 import logging
-from flowsom import flowsom as flowsom
+# from flowsom import flowsom as flowsom
 import tempfile
 import matplotlib
 import scanorama
@@ -588,49 +588,19 @@ class Cytophenograph:
         return self.obs_not_unique
 
     def plot_cell_obs(self):
-        if self.runtime == 'Full':
+        if self.runtime != 'Clustering':
             for _ in ['Cell_type', 'EXP', 'Time_point', 'Condition']:
                 if len(self.adata_subset.obs[_].unique()) > 1:
-                    clusters = self.adata_downsampled.obs[_]
-                    tsne = self.umap.copy()
-                    tsne.columns = ['x', 'y']
-                    # Cluster colors
-                    n_clusters = len(set(clusters))
-                    cluster_colors = pd.Series(
-                        sns.color_palette(self.palette, n_clusters), index = set(clusters))
-
-                    # Set up figure
-                    if len(self.adata_subset.obs[_].unique()) >= 6:
-                        n_cols = 6
-                    else:
-                        n_cols = len(self.adata_subset.obs[_].unique())
-                    n_rows = int(np.ceil(n_clusters / n_cols))
-                    fig = plt.figure(figsize = [2 * n_cols, 2 * (n_rows + 2)], dpi = 300, constrained_layout = True)
-                    gs = plt.GridSpec(
-                        n_rows + 2, n_cols, height_ratios = np.append([0.75, 0.75], np.repeat(1, n_rows))
-                    )
-
-                    # Clusters
-                    ax = plt.subplot(gs[0:2, int(n_cols / 2)])
-                    ax.scatter(tsne["x"], tsne["y"], s = 6, color = cluster_colors[clusters[tsne.index]])
-                    ax.set_axis_off()
-
-                    # Branch probabilities
-                    for i, cluster in enumerate(set(clusters)):
-                        row = int(np.floor(i / n_cols))
-                        ax = plt.subplot(gs[row + 2, i % n_cols])
-                        ax.scatter(tsne.loc[:, "x"], tsne.loc[:, "y"], s = 3, color = "lightgrey")
-                        cells = clusters.index[clusters == cluster]
-                        ax.scatter(
-                            tsne.loc[cells, "x"],
-                            tsne.loc[cells, "y"],
-                            s = 3,
-                            color = cluster_colors[cluster])
-                        ax.set_axis_off()
-                        ax.set_title(cluster, fontsize = 10)
-                    fig.savefig(
-                        "".join([self.UMAP_folder, ".".join(["/umapCELL_" + str(_) + "_all", self.fileformat])]))
-                    plt.close(fig)
+                    sc.pl.umap(self.adata_downsampled,
+                               color=['Clustering',_],
+                               show=False,
+                               layer="scaled01",
+                               legend_fontoutline=1, frameon=False,
+                               na_in_legend=False, s=50, cmap='turbo',
+                               save=".".join(["".join([str(self.tool), _+"_ALL"]), self.fileformat])
+                               )
+                else:
+                    continue
         else:
             pass
 
