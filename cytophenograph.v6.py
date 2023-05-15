@@ -36,9 +36,7 @@ parser.add_option('-s', action="store", dest="spread", default=1.0, type=float, 
 parser.add_option('-t', action="store", dest="thread", type=int, default=1, help='Number of jobs.')
 parser.add_option('-w', action="store", dest="knn", help='Number of K-Nearest Neighbors for VIA KNN graph. Min allowed value is 5, Max allowed value is 100. Deafult value is 30',
                   type=int, default=30)
-parser.add_option('-x', action="store", dest="minclus", help='FlowSOM Min proposed number of clusters. Min allowed value is 5, Max allowed value is maxclus-2. Deafult value is 5',
-                  type=int, default=5)
-parser.add_option('-y', action="store", dest="maxclus", help='FlowSOM Max proposed number of clusters. Min allowed value is minclus-2, Max allowed value is 31. Default value is 31',
+parser.add_option('-y', action="store", dest="maxclus", help='Exact number of clusters for meta-clustering. Max allowed value is 31.',
                   type=int, default=31)
 parser.add_option('-z', action="store", dest="resolution", help='A parameter value controlling the coarseness of the VIA clustering. Min allowed value is 0.2, Max allowed value is 1.5. Deafult value is 1.0',
                   type=float, default=1.0)
@@ -64,7 +62,6 @@ if __name__ == '__main__':
                          runtime=options.runtime,
                          knn=options.knn,
                          resolution=options.resolution,
-                         minclus=options.minclus,
                          maxclus=options.maxclus,
                          downsampling=options.downsampling,
                          cellnumber=options.cellnumber,

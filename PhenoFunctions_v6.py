@@ -49,7 +49,7 @@ class CustomFormatter(logging.Formatter):
 
 class Cytophenograph:
     def __init__(self, info_file, input_folder, output_folder, k_coef, marker_list, analysis_name, thread, tool, batch,
-                 batchcov, mindist, spread, runtime, knn, resolution, minclus, maxclus, downsampling, cellnumber,
+                 batchcov, mindist, spread, runtime, knn, resolution, maxclus, downsampling, cellnumber,
                  filetype,arcsinh):
         self.info_file = info_file
         self.input_folder = input_folder
@@ -90,11 +90,12 @@ class Cytophenograph:
             self.knn = knn
             self.resolution = resolution
         if self.tool == "FlowSOM":
-            self.minclus = minclus
-            self.maxclus = maxclus
+            self.maxclus = str(maxclus)
+            self.flowsomDF = pd.DataFrame()
         self.listmarkerplot = None
         self.concatenate_fcs = None
         self.path_flowai = os.path.dirname(os.path.realpath(__file__)) + '/flowai.Rscript'
+        self.path_flowsom = os.path.dirname(os.path.realpath(__file__)) + '/flowsom.Rscript'
         self.mindist = float(mindist)
         self.spread = float(spread)
         self.downsampling = downsampling
@@ -105,7 +106,7 @@ class Cytophenograph:
         else:
             self.arcsinh = False
         self.root_user = [1]
-
+        self.fnull = open(os.devnull, 'w')
         ch = logging.StreamHandler()
         ch.setFormatter(CustomFormatter())
         self.log.addHandler(ch)
@@ -410,9 +411,12 @@ class Cytophenograph:
         """
         if self.runtime == 'Full':
             # create output directory
-            self.UMAP_folder = "/".join([self.outfig, "UMAP"])
-            self.createdir(self.UMAP_folder)
-            sc.settings.figdir = self.UMAP_folder
+            if self.tool != "FlowSOM":
+                self.UMAP_folder = "/".join([self.outfig, "UMAP"])
+                self.createdir(self.UMAP_folder)
+                sc.settings.figdir = self.UMAP_folder
+            else:
+                pass
             # set palette
             if len(self.adata_subset.obs["pheno_leiden"].unique()) < 28:
                 self.palette = self.palette28
@@ -668,10 +672,9 @@ class Cytophenograph:
                                              "Test_ConcatenatedCells.fcs"])
             if 'Time' in df.columns:
                 fcsy.write_fcs(path = self.concatenate_fcs, df = df)
-                fnull = open(os.devnull, 'w')
                 subprocess.check_call(['Rscript', '--vanilla',
                                        self.path_flowai, self.concatenate_fcs,
-                                       self.output_folder], stdout = fnull, stderr = fnull)
+                                       self.output_folder], stdout = self.fnull, stderr = self.fnull)
                 df = fcsy.read_fcs("".join([self.output_folder,
                                             "Test_ConcatenatedCells_concatenate_after_QC.fcs"]))
                 df.set_index(self.adata.obs.index, inplace = True)
@@ -841,57 +844,29 @@ class Cytophenograph:
                                                                  zero_center = True, copy = True).X
                 self.adata_subset.X = self.adata_subset.layers['scaled']
         self.adata_subset.X = self.adata_subset.layers['raw_value']
-        tmpdf = self.adata_subset.to_df()
-        tmpdf['Time'] = 0
-        tmpdf.to_csv(tmp.name, header = True, index = False)
-        tt = flowsom(tmp.name, if_fcs = False, if_drop = True)
-        sample_df = tt.df
-        if tt.df.shape[0] > 50000:
-            self.flowsomshape = 20
-        else:
-            self.flowsomshape = 50
-        tt.som_mapping(self.flowsomshape, self.flowsomshape, tt.df.shape[1],
-                       sigma = 2.5,
-                       lr = 0.2,
-                       batch_size = 100,
-                       neighborhood = 'gaussian',
-                       if_fcs = False,
-                       seed = 10)
-        from sklearn.cluster import AgglomerativeClustering
-        tt.meta_clustering(AgglomerativeClustering,
-                           # cluster_class: e.g. KMeans, a cluster class, like "from sklearn.cluster import KMeans"
-                           self.minclus,  # min_n: e.g. 10, the min proposed number of clusters
-                           self.maxclus,  # max_n: e.g. 31, the max proposed number of clusters
-                           10,  # iter_n: e.g 10, the iteration times for each number of clusters
-                           resample_proportion = 0.6,
-                           # resample_proportion: e.g 0.6, the proportion of re-sampling when computing clustering
-                           verbose = False  # verbose: e.g. False, whether print out the clustering process
-                           )
-        tt.labeling()
-        output_tf_df = tt.tf_df  # new column added: category
-        output_tf_df.set_index(self.adata.obs.index, inplace = True)
-        # clustering ordering
-        a = output_tf_df['category'].value_counts()
-        a = a.reset_index()
-        b = a[['index']].to_dict()
-        # revert dict
-        output_tf_df['category'] = output_tf_df['category'].map({v: k for k, v in b["index"].items()})
-        # assign
-        self.adata_subset.obs['pheno_leiden'] = output_tf_df['category'].values + 1
-        self.adata.obs['cluster'] = output_tf_df['category'].values + 1
-        # convert to category
-        self.adata_subset.obs['pheno_leiden'] = self.adata_subset.obs['pheno_leiden'].astype('category')
-        self.adata.obs['Cluster_Flowsom'] = self.adata_subset.obs['pheno_leiden'].astype('category')
-        #
+        ###
+        self.tmp = self.adata_subset.to_df()
+        self.tmp = self.tmp.astype(int)
+        self.tmp.to_csv(self.output_folder+"/tmp.csv", header=True,
+                        index=True, sep=',', mode='w')
+        self.UMAP_folder = "/".join([self.outfig, "UMAP"])
+        self.createdir(self.UMAP_folder)
+        subprocess.check_call(['Rscript', '--vanilla',
+                               self.path_flowsom, self.output_folder+"/tmp.csv",
+                               self.output_folder,self.UMAP_folder,self.maxclus], stdout=self.fnull, stderr=self.fnull)
+        self.flowsomDF = pd.read_csv(self.output_folder+"/output_flowsom.csv", sep=',', header=0, index_col=0)
+        self.adata_subset.obs['Clusters'] = self.flowsomDF['Clusters'].values
+        self.adata_subset.obs['Metaclusters'] = self.flowsomDF['Metaclusters'].values
+        self.adata.obs['Cluster_Flowsom'] = self.adata_subset.obs['Clusters'].astype('category')
+        self.adata.obs['MetaCluster_Flowsom'] = self.adata_subset.obs['Metaclusters'].astype('category')
+        self.adata_subset.obs['pheno_leiden'] = self.flowsomDF['Metaclusters'].values
+        self.adata_subset.obs['pheno_leiden'] = self.adata_subset.obs['pheno_leiden'].astype("category")
+        self.adata.obs['cluster'] =self.flowsomDF['Metaclusters'].values
         self.adata_subset.X = self.adata_subset.layers['scaled']
-        self.embedding = self.runumap()
-        if self.runtime != 'Clustering':
+        if self.runtime == 'Full':
+            self.embedding = self.runumap()
             self.adata.obsm['X_umap'] = self.embedding
             self.adata_subset.obsm['X_umap'] = self.embedding
-            for _ in list(self.adata_subset.obs['pheno_leiden'].unique()):
-                if self.adata_subset[self.adata_subset.obs['pheno_leiden'].isin([_]), :].shape[0] < 20:
-                    self.adata_subset = self.adata_subset[~self.adata_subset.obs['pheno_leiden'].isin([_]), :]
-                    self.adata = self.adata[~self.adata.obs['Cluster_Flowsom'].isin([_]), :]
         self.generation_concatenate()
         self.plot_umap()
         self.plot_umap_expression()
@@ -1023,6 +998,7 @@ class Cytophenograph:
         if len(self.adata_subset.obs["ID"].unique()) > 1:
             self.dfxlinkage = self.adata_subset.obs.groupby("ID")["pheno_leiden"].value_counts(
                 normalize = True).unstack() * 100
+            self.dfxlinkage.fillna(0, inplace = True)
             Z = linkage(self.dfxlinkage, 'ward',
                         optimal_ordering = True)
             dn = dendrogram(Z, get_leaves = True, orientation = 'left', labels = self.dfxlinkage.index,
@@ -1081,6 +1057,8 @@ class Cytophenograph:
                 self.tmp['VIA'] = _
             else:
                 self.tmp['FlowSOM'] = _
+                self.tmp['MetaCluster_FlowSOM'] = self.adata[self.adata.obs['cluster'].isin([_])].obs[
+                    'Cluster_Flowsom'].values
             self.tmp.to_csv("/".join([self.output_folder, "".join(["CSVcluster", self.tool]),
                                       "".join([self.analysis_name, "_", str(_), ".csv"])]), header = True,
                             index = False)
@@ -1108,6 +1086,10 @@ class Cytophenograph:
             self.tmp['UMAP_2'] = self.adata.obsm['X_umap'][:, 1]
         if self.runtime != 'UMAP':
             self.tmp[self.tool] = self.adata.obs['cluster'].values
+            if self.tool == 'FlowSOM':
+                self.tmp['MetaCluster_FlowSOM'] = self.adata.obs['Cluster_Flowsom'].values
+            else:
+                pass
             self.tmp["cluster"] = self.adata.obs['cluster'].values
             # get unique filenames
             unique_filename = self.adata.obs['Sample'].unique()
@@ -1149,7 +1131,6 @@ class Cytophenograph:
                                          "".join([str(unique_filename[i]), "_", self.analysis_name,
                                                   ".fcs"])])
                                )
-
         else:
             unique_filename = self.adata.obs['Sample'].unique()
             for i in range(len(unique_filename)):
