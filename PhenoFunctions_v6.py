@@ -416,7 +416,7 @@ class Cytophenograph:
                 self.createdir(self.UMAP_folder)
                 sc.settings.figdir = self.UMAP_folder
             else:
-                pass
+                sc.settings.figdir = self.UMAP_folder
             # set palette
             if len(self.adata_subset.obs["pheno_leiden"].unique()) < 28:
                 self.palette = self.palette28
