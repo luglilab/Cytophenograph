@@ -9,7 +9,7 @@ import scanpy as sc
 import pyVIA.core as via
 import umap
 import logging
-# from flowsom import flowsom as flowsom
+import pickle
 import tempfile
 import matplotlib
 import scanorama
@@ -125,6 +125,8 @@ class Cytophenograph:
         Read FCS file version 3 and convert in pandas dataframe
         Returns: Pandas Dataframe
         """
+        self.outfig = "/".join([self.output_folder, "".join(["Figures", self.tool])])
+        self.createdir(self.outfig)
         df = DataFrame.from_fcs(path_csv_file, channel_type = 'multi')
         df.columns = df.columns.map(' :: '.join)
         df.columns = df.columns.str.replace('[\",\']', '')
@@ -290,8 +292,6 @@ class Cytophenograph:
         Create a barplot and export with the self.cleaning dictionary
         :return:
         """
-        self.outfig = "/".join([self.output_folder, "".join(["Figures", self.tool])])
-        self.createdir(self.outfig)
         self.QC_folder = "/".join([self.outfig, "QC_PLOTS"])
         self.createdir(self.QC_folder)
         ax = sns.barplot(data = pd.DataFrame.from_dict(self.cleaning, orient = 'index').reset_index(),
@@ -300,7 +300,7 @@ class Cytophenograph:
         plt.grid(False)
         plt.ylabel("Number of cells")
         plt.xlabel("Cleaning steps")
-        plt.savefig(self.QC_folder+ "/cleaning.png", dpi = 300, bbox_inches = 'tight')
+        plt.savefig(self.QC_folder + "/cleaning.png", dpi = 300, bbox_inches = 'tight')
 
     def correct_scanorama(self):
         """
@@ -573,6 +573,7 @@ class Cytophenograph:
                        )
         else:
             pass
+
     def find_obs_not_unique(self):
         """
         Find obs columns that are not unique
@@ -645,7 +646,7 @@ class Cytophenograph:
                 subprocess.check_call(['Rscript', '--vanilla',
                                        self.path_flowai, self.concatenate_fcs,
                                        self.output_folder], stdout = self.fnull, stderr = self.fnull)
-                df = fcsy.read_fcs("".join([self.output_folder,
+                df = fcsy.read_fcs("/".join([self.output_folder,
                                             "Test_ConcatenatedCells_concatenate_after_QC.fcs"]))
                 df.set_index(self.adata.obs.index, inplace = True)
                 self.adata.obs['remove_from_FM'] = df['remove_from_FM']
@@ -717,7 +718,7 @@ class Cytophenograph:
         self.plot_umap_expression()
         self.plot_frequency()
         self.plot_cell_clusters()
-        self.plot_cell_obs()
+        # self.plot_cell_obs()
         self.matrixplot()
         return self.adata
 
@@ -774,7 +775,7 @@ class Cytophenograph:
         self.plot_umap_expression()
         self.plot_frequency()
         self.plot_cell_clusters()
-        self.plot_cell_obs()
+        # self.plot_cell_obs()
         self.matrixplot()
         return self.adata
 
@@ -842,7 +843,7 @@ class Cytophenograph:
         self.plot_umap_expression()
         self.plot_frequency()
         self.plot_cell_clusters()
-        self.plot_cell_obs()
+        # self.plot_cell_obs()
         self.matrixplot()
         return self.adata
 
@@ -1183,9 +1184,19 @@ class Cytophenograph:
                 self.adata.X = self.adata.layers['scaled01']
                 self.adata.layers['scaled01'] = scipy.sparse.csr_matrix(self.adata.layers['scaled01'])
                 self.adata.write("/".join([self.output_folder, ".".join([self.analysis_name, "h5ad"])]))
+                try:
+                    os.remove(self.output_folder+ "tmp.csv")
+                    os.remove(self.output_folder + "output_flowsom.csv")
+                except:
+                    pass
         else:
             self.adata.layers['scaled01'] = self.scaler.fit_transform(self.adata.layers['raw_value'])
             self.adata.X = self.adata.layers['scaled01']
             self.adata.layers['scaled01'] = scipy.sparse.csr_matrix(self.adata.layers['scaled01'])
             self.adata.write("/".join([self.output_folder, ".".join([self.analysis_name, "h5ad"])]))
+        try:
+            os.remove(self.output_folder + "".join([self.analysis_name, "_ConcatenatedCells_concatenate_after_QC.fcs"]))
+            os.remove(self.output_folder + "".join([self.analysis_name, "_ConcatenatedCells.fcs"]))
+        except:
+            pass
         self.log.warning("PART 5")

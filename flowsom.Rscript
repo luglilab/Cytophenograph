@@ -18,3 +18,7 @@ write.csv(MetaDF, file = paste(outputfolder,"/","output_flowsom.csv",sep=""), ro
 pdf(paste(outputfigures,"/star_char_flowsom.pdf",sep=""), width = 11, height = 8.5,onefile=FALSE)
 PlotStars(fSOM, backgroundValues = fSOM$metaclustering)
 dev.off()
+pdf(paste(outputfigures,"/cluster_flowsom.pdf",sep=""), width = 11, height = 8.5,onefile=FALSE)
+PlotLabels(fSOM, labels = fSOM$metaclustering)
+dev.off()
+
