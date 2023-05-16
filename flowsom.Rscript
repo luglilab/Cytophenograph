@@ -1,0 +1,24 @@
+set.seed(42)
+require(flowCore)
+require(FlowSOM)
+options(warn=-1)
+args = commandArgs(trailingOnly = TRUE)
+fcs = args[1]
+outputfolder = args[2]
+outputfigures = args[3]
+NClus = args[4]
+data <- read.csv(fcs,row.names = 1)
+matrix_data <- as.matrix(data)
+fSOM <- FlowSOM(matrix_data,
+                compensate = FALSE, transform = FALSE,
+                scale = FALSE, colsToUse = NULL, xdim = 14, ydim = 14, nClus = strtoi(NClus))
+MetaDF <- data.frame(Clusters = GetClusters(fSOM), Metaclusters = GetMetaclusters(fSOM))
+row.names(MetaDF) <- row.names(matrix_data)
+write.csv(MetaDF, file = paste(outputfolder,"/","output_flowsom.csv",sep=""), row.names = TRUE)
+pdf(paste(outputfigures,"/star_char_flowsom.pdf",sep=""), width = 11, height = 8.5,onefile=FALSE)
+PlotStars(fSOM, backgroundValues = fSOM$metaclustering)
+dev.off()
+pdf(paste(outputfigures,"/cluster_flowsom.pdf",sep=""), width = 11, height = 8.5,onefile=FALSE)
+PlotLabels(fSOM, labels = fSOM$metaclustering)
+dev.off()
+
