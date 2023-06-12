@@ -125,8 +125,6 @@ class Cytophenograph:
         Read FCS file version 3 and convert in pandas dataframe
         Returns: Pandas Dataframe
         """
-        self.outfig = "/".join([self.output_folder, "".join(["Figures", self.tool])])
-        self.createdir(self.outfig)
         df = DataFrame.from_fcs(path_csv_file, channel_type = 'multi')
         df.columns = df.columns.map(' :: '.join)
         df.columns = df.columns.str.replace('[\",\']', '')
@@ -281,6 +279,8 @@ class Cytophenograph:
                 pass
         self.cleaning.update({"Before QC":self.adata.shape[0]})
         self.log.info("{0} cells undergo to clustering analysis".format(self.adata.shape[0]))
+        self.outfig = "/".join([self.output_folder, "".join(["Figures", self.tool])])
+        self.createdir(self.outfig)
         return self.adata
 
     def transformation(self):
@@ -322,7 +322,7 @@ class Cytophenograph:
         self.corrected_dataset = self.corrected[0].concatenate(self.corrected[1:],
                                                                join = 'inner',
                                                                batch_key = self.batchcov)
-        self.corrected_dataset.layers['raw_value'] = self.adata_subset.X
+        self.corrected_dataset.layers['raw_value'] = self.adata_subset.layers['raw_value']
         self.corrected_dataset.layers['scaled'] = self.adata_subset.layers['scaled']
         return self.corrected_dataset
 
@@ -615,19 +615,19 @@ class Cytophenograph:
         sc.settings.figdir = self.matrixplot_folder
         if self.runtime != 'UMAP':
             sc.pl.matrixplot(self.adata_subset, list(self.adata_subset.var_names), "pheno_leiden",
-                             dendrogram = True, vmin = -2, vmax = 2, cmap = 'RdBu_r', layer = "scaled",
-                             show = False, swap_axes = False, return_fig = False,
-                             save = ".".join(["matrixplot_mean_z_score", self.fileformat]))
+                             dendrogram=True, vmin=-2, vmax=2, cmap='RdBu_r', layer="scaled",
+                             show=False, swap_axes=False, return_fig=False,
+                             save=".".join(["matrixplot_mean_z_score", self.fileformat]))
             sc.pl.matrixplot(self.adata_subset, list(self.adata_subset.var_names), "pheno_leiden",
-                             dendrogram = True, vmin = -2, vmax = 2, cmap = 'RdBu_r', layer = "scaled",
-                             show = False, swap_axes = False, return_fig = False,
-                             save = ".".join(["matrixplot_mean_z_score", 'svg']))
+                             dendrogram=True, vmin=-2, vmax=2, cmap='RdBu_r', layer="scaled",
+                             show=False, swap_axes=False, return_fig=False,
+                             save=".".join(["matrixplot_mean_z_score", 'svg']))
             sc.pl.matrixplot(self.adata_subset, list(self.adata_subset.var_names), "pheno_leiden",
-                             dendrogram = True, cmap = 'Blues', standard_scale = 'var',
-                             colorbar_title = 'column scaled\nexpression', layer = "scaled",
-                             swap_axes = False, return_fig = False,
-                             show = False,
-                             save = ".".join(["matrixplot_column_scaled_expression", self.fileformat]))
+                             dendrogram=True, cmap='Blues', standard_scale='var',
+                             colorbar_title='column scaled\nexpression', layer="scaled",
+                             swap_axes=False, return_fig=False,
+                             show=False,
+                             save=".".join(["matrixplot_column_scaled_expression", self.fileformat]))
         else:
             pass
 
@@ -828,8 +828,8 @@ class Cytophenograph:
         self.flowsomDF = pd.read_csv(self.output_folder+"/output_flowsom.csv", sep=',', header=0, index_col=0)
         self.adata_subset.obs['Clusters'] = self.flowsomDF['Clusters'].values
         self.adata_subset.obs['Metaclusters'] = self.flowsomDF['Metaclusters'].values
-        self.adata.obs['Cluster_Flowsom'] = self.adata_subset.obs['Clusters'].astype('category')
-        self.adata.obs['MetaCluster_Flowsom'] = self.adata_subset.obs['Metaclusters'].astype('category')
+        self.adata.obs['Cluster_Flowsom'] = self.adata_subset.obs['Clusters'].values
+        self.adata.obs['MetaCluster_Flowsom'] = self.adata_subset.obs['Metaclusters'].values
         self.adata_subset.obs['pheno_leiden'] = self.flowsomDF['Metaclusters'].values
         self.adata_subset.obs['pheno_leiden'] = self.adata_subset.obs['pheno_leiden'].astype("category")
         self.adata.obs['cluster'] =self.flowsomDF['Metaclusters'].values
@@ -1028,7 +1028,7 @@ class Cytophenograph:
                 self.tmp['VIA'] = _
             else:
                 self.tmp['FlowSOM'] = _
-                self.tmp['MetaCluster_FlowSOM'] = self.adata[self.adata.obs['cluster'].isin([_])].obs[
+                self.tmp['MetaCluster_FlowSOM'] = self.adata[self.adata.obs['cluster'].isin([int(_)]),:].obs[
                     'Cluster_Flowsom'].values
             self.tmp.to_csv("/".join([self.output_folder, "".join(["CSVcluster", self.tool]),
                                       "".join([self.analysis_name, "_", str(_), ".csv"])]), header = True,
