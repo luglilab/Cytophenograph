@@ -15,7 +15,7 @@ fSOM <- FlowSOM(matrix_data,
 MetaDF <- data.frame(Clusters = GetClusters(fSOM), Metaclusters = GetMetaclusters(fSOM))
 row.names(MetaDF) <- row.names(matrix_data)
 write.csv(MetaDF, file = paste(outputfolder,"/","output_flowsom.csv",sep=""), row.names = TRUE)
-pdf(paste(outputfigures,"/star_char_flowsom.pdf",sep=""), width = 11, height = 8.5,onefile=FALSE)
+pdf(paste(outputfigures,"/star_chart_flowsom.pdf",sep=""), width = 11, height = 8.5,onefile=FALSE)
 PlotStars(fSOM, backgroundValues = fSOM$metaclustering)
 dev.off()
 pdf(paste(outputfigures,"/cluster_flowsom.pdf",sep=""), width = 11, height = 8.5,onefile=FALSE)

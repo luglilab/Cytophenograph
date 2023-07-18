@@ -1,6 +1,6 @@
+import sys, traceback
 import optparse
 from PhenoFunctions_v6 import *
-import traceback
 
 parser = optparse.OptionParser(usage='python ./Cytophenograph/cytophenograph.v5.py -i $abs_path/Cytophenograph/Test_dataset/CD8_Panel_II_channelvalues_GA_downSampled/ -o $abs_path/Cytophenograph/output_test -k 300 -m $abs_path/Cytophenograph/Test_dataset/CD8_bulk_markers_to_exclude.txt -n Test -t 10 -p $abs_path/Cytophenograph/Test_dataset/Info_file_bulk_Test.xlsx -c VIA', version='5.0')
 parser.add_option('-a', action="store_true", dest="arcsin", default=False,
@@ -89,7 +89,9 @@ if __name__ == '__main__':
             run.runtimeumap()
             run.groupbysample()
             run.exporting()
-    except Exception:
-        print(traceback.format_exc())
+    except Exception as e:
+        traceback.print_tb(sys.exc_info()[2])
+        print("Error: {strerror}".format(strerror=e.args))
+
         run.log.error("Execution Error!")
         sys.exit(1)

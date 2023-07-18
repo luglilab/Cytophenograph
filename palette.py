@@ -1,31 +1,34 @@
-palette28 = ["#08519c",  # Blue 1
-                  "#ff7f0e",  # Orange 1
-                  "#1f6836",  # Green 1
-                  "#514888",  # Purple 1
-                  "#b30000",  # Red 1
-                  "#5a3730",  # Brown 1
-                  "#d638a6",  # Pink 1
-                  "#595959",  # Grey 1
-                  "#7c7c16",  # Green 1
-                  "#77e398",  # Light Green
-                  "#3182bd",  # Blue 2
-                  "#9e3a09",  # Orange 2
-                  "#31a354",  # Green 2
-                  "#756bb1",  # Purple 2
-                  "#ff0000",  # Red 2
-                  "#8c564b",  # Brown 2
-                  "#e377c2",  # Pink 2
-                  "#808080",  # Grey 2
-                  "#bcbd22",  # Green 2
-                  "#85b5d3",  # Blue 3
-                  "#ffa85b",  # Orange 3
-                  "#55cc79",  # Green 3
-                  "#a49dcb",  # Purple 3
-                  "#ff4d4d",  # Red 3
-                  "#b37c71",  # Brown 3
-                  "#f0b6de",  # Pink 3
-                  "#a6a6a6",  # Grey 3
-                  "#dedf4d"]  # Green 3
+palette28 = [
+    "#08519c",  # Blue 1
+	"#ff7f0e",  # Orange 1
+	"#1f6836",  # Green 1
+	"#514888",  # Purple 1
+	"#b30000",  # Red 1
+	"#5a3730",  # Brown 1
+	"#d638a6",  # Pink 1
+	"#595959",  # Grey 1
+	"#7c7c16",  # Green 1
+	"#77e398",  # Light Green
+	"#3182bd",  # Blue 2
+	"#9e3a09",  # Orange 2
+	"#31a354",  # Green 2
+	"#756bb1",  # Purple 2
+	"#ff0000",  # Red 2
+	"#8c564b",  # Brown 2
+	"#e377c2",  # Pink 2
+	"#808080",  # Grey 2
+	"#bcbd22",  # Green 2
+	"#85b5d3",  # Blue 3
+	"#ffa85b",  # Orange 3
+	"#55cc79",  # Green 3
+	"#a49dcb",  # Purple 3
+	"#ff4d4d",  # Red 3
+	"#b37c71",  # Brown 3
+	"#f0b6de",  # Pink 3
+	"#a6a6a6",  # Grey 3
+	"#dedf4d",  # Green 3
+]
+
 palette102 = [
     "#FFFF00",
     "#1CE6FF",
