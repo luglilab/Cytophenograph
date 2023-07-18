@@ -27,7 +27,7 @@ FlowCytometryTools==0.5.1
 -e git+https://github.com/luglilab/Cytophenograph@12548ce09da273a020c9759f0846a3f00468804d#egg=FlowSom&subdirectory=FlowSOM_LugliLab
 fonttools @ file:///Users/runner/miniforge3/conda-bld/fonttools_1651017805703/work
 fsspec @ file:///home/conda/feedstock_root/build_artifacts/fsspec_1648820545323/work
-future==0.18.2
+future==0.18.3
 geosketch @ file:///opt/conda/conda-bld/geosketch_1612105467500/work
 graphtools==1.5.2
 h5py==3.6.0
