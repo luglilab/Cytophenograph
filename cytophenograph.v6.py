@@ -3,6 +3,8 @@ from PhenoFunctions_v6 import *
 import traceback
 
 parser = optparse.OptionParser(usage='python ./Cytophenograph/cytophenograph.v5.py -i $abs_path/Cytophenograph/Test_dataset/CD8_Panel_II_channelvalues_GA_downSampled/ -o $abs_path/Cytophenograph/output_test -k 300 -m $abs_path/Cytophenograph/Test_dataset/CD8_bulk_markers_to_exclude.txt -n Test -t 10 -p $abs_path/Cytophenograph/Test_dataset/Info_file_bulk_Test.xlsx -c VIA', version='5.0')
+parser.add_option('-a', action="store_true", dest="arcsin", default=False,
+                  help='Perform arcsinh transformation on data.')
 parser.add_option('-b', action="store_true", dest="batch", default=False,
                   help='Perform batch correction with Scanorama.')
 parser.add_option('-c', type='choice', choices=['Phenograph', 'VIA', 'FlowSOM'],
@@ -34,9 +36,7 @@ parser.add_option('-s', action="store", dest="spread", default=1.0, type=float, 
 parser.add_option('-t', action="store", dest="thread", type=int, default=1, help='Number of jobs.')
 parser.add_option('-w', action="store", dest="knn", help='Number of K-Nearest Neighbors for VIA KNN graph. Min allowed value is 5, Max allowed value is 100. Deafult value is 30',
                   type=int, default=30)
-parser.add_option('-x', action="store", dest="minclus", help='FlowSOM Min proposed number of clusters. Min allowed value is 5, Max allowed value is maxclus-2. Deafult value is 5',
-                  type=int, default=5)
-parser.add_option('-y', action="store", dest="maxclus", help='FlowSOM Max proposed number of clusters. Min allowed value is minclus-2, Max allowed value is 31. Default value is 31',
+parser.add_option('-y', action="store", dest="maxclus", help='Exact number of clusters for meta-clustering. Max allowed value is 31.',
                   type=int, default=31)
 parser.add_option('-z', action="store", dest="resolution", help='A parameter value controlling the coarseness of the VIA clustering. Min allowed value is 0.2, Max allowed value is 1.5. Deafult value is 1.0',
                   type=float, default=1.0)
@@ -62,11 +62,11 @@ if __name__ == '__main__':
                          runtime=options.runtime,
                          knn=options.knn,
                          resolution=options.resolution,
-                         minclus=options.minclus,
                          maxclus=options.maxclus,
                          downsampling=options.downsampling,
                          cellnumber=options.cellnumber,
-                         filetype=options.fileformat)
+                         filetype=options.fileformat,
+                         arcsinh=options.arcsin)
     try:
         DictInfo["Infofile"] = run.read_info_file()
         DictInfo["List_csv_files"] = run.import_all_event()
