@@ -139,7 +139,7 @@ texttable==1.6.7
 threadpoolctl @ file:///home/conda/feedstock_root/build_artifacts/threadpoolctl_1643647933166/work
 tifffile==2023.1.23.1
 toolz @ file:///home/conda/feedstock_root/build_artifacts/toolz_1657485559105/work
-tornado==6.3.1
+tornado==6.3.2
 tqdm==4.64.1
 traitlets==5.9.0
 typing_extensions==4.5.0
