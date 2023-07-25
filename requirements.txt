@@ -7,7 +7,7 @@ attrs==23.1.0
 backcall==0.2.0
 beautifulsoup4==4.11.1
 brotlipy==0.7.0
-certifi==2022.12.7
+certifi==2023.7.22
 cffi @ file:///Users/runner/miniforge3/conda-bld/cffi_1671179477998/work
 charset-normalizer==3.0.1
 click @ file:///home/conda/feedstock_root/build_artifacts/click_1666798198223/work
